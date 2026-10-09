@@ -2,6 +2,15 @@
 
 Local `0.1.0` staging extraction from immutable Earth `90e23b3`. The package owns the version-one scene envelope, references, authored ordering, capture/marker/overview records, groups/links, manifest validation/input, replacement/history/controller and Scenes presentation. It imports common image records and checks from `@foss-earth/images`. It creates no renderer, image broker, cache, upload queue, camera clock or feature application.
 
+This is the independent `foss-earth/scenes` checkout. In an organization-grouped
+workspace it lives beside `360`, `images`, `preview-sheets`, `tiled-cubemap` and
+the `foss-earth.github.io` application. Use those providers' public package
+exports through the shared installer source/package/hybrid selection contract;
+the group directory itself is not a repository. The retained pre-split Earth
+application is a read-only recovery input. It is not a dependency or a second
+copy of this source. Current relocated source and installed links require a
+fresh granted qualification; earlier logs retain their original paths and scope.
+
 
 The pure root exports scene records, `validateScene`, `composeSceneSchema`, `SCENES_TAB`, the four existing `SCENE_DOCUMENT_PARAMETERS` and Content/Credits section titles. A host supplies `RepresentationHooks[]`, `validateImageAsset(asset,{path})`, optional extension hooks and named byte/count limits. Unknown projections are skipped with warnings; optional unknown entities remain in authored list order and links to them are disabled; required unsupported entities/extensions fail. Version1, errors, style inheritance, unknown capture height, north alignment, reference checks and base-URL resolution preserve source behavior. No spatial representation definition or built-in catalogue lives here.
 
@@ -12,6 +21,13 @@ The pure root exports scene records, `validateScene`, `composeSceneSchema`, `SCE
 `loadScene(input,options)` validates before owner work. The host supplies one360 viewer binding, engine-owned geography/navigation ports, its current radius setting and history session identity. Scenes passes each image's asset, pose, resolved placement/content, title/credits/view and action callbacks; it resolves link destinations itself. `viewer.prepare` prepares hidden metadata without waiting for every preview, `replaceImages` atomically publishes metadata and the viewer reveals only ready images. Outgoing entries dispose immediately after successful publication. A validation/prepublication failure preserves the prior scene; postpublication preview failure stays listed unavailable. Superseded/disposed late owner preparations are closed, and placement watches/history subscriptions are removed. The host must give this scene binding its own namespace when multiple scenes share a renderer.
 
 `SceneWorldPorts.resolvePlacement` reads the displayed-ground snapshot synchronously, preserving `marker:null` and `state:"pending"` when missing. `watchPlacement` reports later engine-ground revisions; Scenes supplies no duplicate ECEF/ENU math. `showOverview` delegates ground preparation and camera motion to the engine port, which must preserve interrupted momentum and user-input handover. `frames.subscribe` and `projectLink` are optional existing renderer/viewer overlay ports; Scenes starts no animation loop. `describeImage` passes owner observations into the existing preview/details status, without recomputing format dimensions or budgets. The360 binding owns input, transitions and active-image detail; image progress/failure ports are wired by the host when constructing that binding.
+
+`SceneViewerStatus.immersionDetail` is an optional structural observation from
+the supplied viewer. Its representation, loading, limitation and optional
+progress fields match the public viewer reading without importing its
+implementation. `SceneStatus` passes the published reading through unchanged
+on viewer notifications. `null` stays cleared and an omitted reading stays
+absent; Scenes derives no replacement reading from a target or asset metadata.
 
 The app controller loads explicit URLs or registered example IDs, cancels old loads, cleans stale successful handles and implements source click/tap rules using an injected drag threshold. It does not consume gestures, keyboard controls or shareable arbitrary URLs. `./panel` requires an explicit Document and shared UI/settings port. It retains source Content, Credits, entity details, groups, unavailable entries and authored directional hotspot buttons. Other owners contribute Orbs, Motion, Loading, Tiles and Saved sections at existing `scenes.*` homes. The host keeps active `panorama` and `panorama-settings` tabs with360 and HUD/toolbar composition with their owners. Import `./panel.css` together with the shared UI base styles.
 
@@ -77,7 +93,7 @@ the prose adds no implemented capability, successful experiment or device claim.
 
 `tests/fixtures/proposal-example.scene.json` retains the original full source manifest. Envelope tests supply a neutral test owner; spatial fixtures stay with format owners. `fixtures/360-consumer.ts` uses only public360/preview/scenes declarations and demonstrates the actual structural interface. Tests cover envelope/schema/limits/URLs, progressive readiness, prepublication preservation, stale cleanup, history, controller pointers and injected panel lifecycle. Source-only candidate: no install, check, build, pack, real app adoption, GPU/device qualification or published artifact is claimed yet. Exact tool versions are pinned; incremental checks keep their caches and cap Vitest at50% workers. A granted check window must run `npm run ci` once, then only affected failure steps, and an offline isolated installed-artifact/type consumer.
 
-Source blobs, SHA256 values and transformation routes are in `SOURCE_PROVENANCE.json`. The exact primary-generated CI9e caller/scaffold is preserved; complete accepted lineage, installed shared conformance, public caller availability and actual remote admission remain pending. See `docs/admission.md`. Rollback retains the current umbrella and its unrelated dirty/ignored evidence until primary accepts this package, consumes the public exports, then removes source in its own checkout. No source history, commit attribution or remote admission settings are changed by this staging extraction.
+Source blobs, SHA256 values and transformation routes are in `SOURCE_PROVENANCE.json`. The exact primary-generated CI9e caller/scaffold is preserved; complete accepted lineage, installed shared conformance, public caller availability and actual remote admission remain pending. See `docs/admission.md`. Rollback retains the read-only original application archive, earlier artifacts and their dirty/ignored evidence. Primary composes the independent `foss-earth.github.io` application through checked public exports; this owner does not retire or mutate the archive. No source history, commit attribution or remote admission settings are changed by this source preparation.
 
 The pure root also exports `checkSceneFiles(scene, read, options)` with explicit
 representation file/group and opaque extension file hooks. `./node` binds the

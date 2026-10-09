@@ -48,6 +48,23 @@ const viewer = {
 const world = { resolvePlacement(entity, { radiusMeters }) { return { placement: { marker: null, radiusMeters, content: [[1, 0, 0], [0, 1, 0], [0, 0, 1]], ...entity.markerStyle }, state: "pending" }; }, async showOverview() { return { ok: true, state: "applied" }; } };
 const loaded = await browser.loadScene(original, { ...validation, viewer, world, markerRadiusMeters: () => 1, sessionId: "explicit-host-session", history: browser.createMemorySceneHistory() }); assert.equal(loaded.ok, true); await loaded.handle.whenSettled();
 assert.equal(inputs[0].placement.marker, null); assert.equal(inputs[0].details.capture.heightMeters, null); assert.equal("entities" in inputs[0], false); assert.equal(await inputs[0].actions[0].activate(), true); assert.equal(loaded.handle.status.active, "courtyard");
+// Scene status passes the supplied viewer's published observations through unchanged.
+// Missing or cleared readings cannot be replaced by an authored/requested detail value.
+assert.equal("immersionDetail" in loaded.handle.status, false);
+const detailSnapshots = [], offDetail = loaded.handle.subscribe(status => detailSnapshots.push(status));
+const publishViewerStatus = next => { state = next; for (const callback of subscribers) callback(state); };
+try {
+  const first = { representation: "preview-published", loading: "tiles-in-flight", limitation: "memory", progress: Object.freeze(["resident parent retained"]) };
+  publishViewerStatus({ phase: "immersive", active: "courtyard", target: null, immersionDetail: first });
+  assert.equal(loaded.handle.status.immersionDetail, first); assert.equal(detailSnapshots.at(-1).immersionDetail, first);
+  const finer = { representation: "tiles-published", loading: null, limitation: null, progress: Object.freeze(["replacement published"]) };
+  publishViewerStatus({ phase: "immersive", active: "courtyard", target: null, immersionDetail: finer });
+  assert.equal(loaded.handle.status.immersionDetail, finer); assert.equal(detailSnapshots.at(-1).immersionDetail, finer); assert.equal(first.representation, "preview-published");
+  publishViewerStatus({ phase: "immersive", active: "courtyard", target: null, immersionDetail: null });
+  assert.equal(loaded.handle.status.immersionDetail, null); assert.equal(detailSnapshots.at(-1).immersionDetail, null);
+  publishViewerStatus({ phase: "immersive", active: "courtyard", target: null });
+  assert.equal("immersionDetail" in loaded.handle.status, false); assert.equal("immersionDetail" in detailSnapshots.at(-1), false);
+} finally { offDetail(); }
 assert.equal((await loaded.handle.replace({ ...original, version: 2 })).ok, false); assert.equal(loaded.handle.status.active, "courtyard"); assert.deepEqual(disposals, []);
 const page = dom.window.document, controller = browser.createSceneController({ examples: [], baseUrl: validation.baseUrl, load: async () => ({ ok: true, handle: loaded.handle }) }); assert.equal(await controller.load("scene.json"), true);
 const ui = { parameterSection({ main }) { return { element: main, destroy() {} }; }, sections(sections) { const element = page.createElement("div"); for (const section of sections) element.append(section.element); return { element, destroy() { element.remove(); } }; } };
@@ -97,6 +114,6 @@ const alias = path.join(consumer, "manifest-alias"); mkdirSync(alias); const lin
 assert.throws(() => previewDocument.buildScenePreviewSheets(linked), /outside the scene's folder/); assert.deepEqual(readFileSync(fixture.manifest), before);
 const negative = spawnSync(process.execPath, ["--import", guard, outside], { cwd: consumer, env: childEnvironment, encoding: "utf8" }); assert.notEqual(negative.status, 0); assert.match(negative.stderr, /OUTSIDE_ISOLATED_WORKSPACE/);
 assert.equal(manifest.bin["foss-earth-check-scene"], manifest.exports["./check-cli"]); assert.equal(manifest.bin["foss-earth-build-preview-sheets"], manifest.exports["./build-preview-cli"]);
-const receipt = { package: manifest.name, version: manifest.version, artifact: path.basename(artifact), sha256: createHash("sha256").update(readFileSync(artifact)).digest("hex"), node: process.version, sourceRevision: manifest.fossEarthSplit.sourceRevision, installedEntries: [".", "./browser", "./panel", "./schema.json", "./panel.css", "./node", "./preview-sheets", "./check-cli", "./build-preview-cli"], pureImport: true, isolatedRealpathResolution: true, guardedCliNegativeControl: true, actual360Catalogue: true, optionalPreviewOwnerHook: true, preservedOrderAndUnsupportedProjection: true, injectedViewerWorldNavigation: true, prepublicationPreservation: true, ownerDisposal: true, explicitPanelDocumentUi: true, actualPublicMediaStoreSavedPresentation: true, actualPublicUiSceneLog: true, optionalUiInitializationGuard: true, publicPreviewDocumentFallback: true, manifestSymlinkRefusal: true, declarations: true, publication: "unaccepted local staging; no destination/remote admission asserted" };
+const receipt = { package: manifest.name, version: manifest.version, artifact: path.basename(artifact), sha256: createHash("sha256").update(readFileSync(artifact)).digest("hex"), node: process.version, sourceRevision: manifest.fossEarthSplit.sourceRevision, installedEntries: [".", "./browser", "./panel", "./schema.json", "./panel.css", "./node", "./preview-sheets", "./check-cli", "./build-preview-cli"], pureImport: true, isolatedRealpathResolution: true, guardedCliNegativeControl: true, actual360Catalogue: true, optionalPreviewOwnerHook: true, preservedOrderAndUnsupportedProjection: true, injectedViewerWorldNavigation: true, viewerOwnedDetailObservations: true, prepublicationPreservation: true, ownerDisposal: true, explicitPanelDocumentUi: true, actualPublicMediaStoreSavedPresentation: true, actualPublicUiSceneLog: true, optionalUiInitializationGuard: true, publicPreviewDocumentFallback: true, manifestSymlinkRefusal: true, declarations: true, publication: "unaccepted local staging; no destination/remote admission asserted" };
 writeFileSync(path.join(consumer, "receipt.json"), JSON.stringify(receipt, null, 2) + "\n"); process.stdout.write(JSON.stringify(receipt) + "\n");
 } finally { dom?.window.close(); hook.deregister(); }

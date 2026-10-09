@@ -1,7 +1,7 @@
 # Release admission
 
-YOU CANNOT HAVE AI AS A CO-AUTHOR, OR YOUR CONTRIBUTIONS WILL BE REJECTED.
+Follow the [contribution policy](../CONTRIBUTING.md), including commit attribution.
 
-This candidate has no accepted pinned `foss-earth/ci` caller yet. It must use the same final attribution component, canonical policy pin and shared positive/negative conformance fixtures as every Earth destination. Metadata verification is unconditional for source, documentation, research, assets and.github changes; no docs-path filter is allowed. No private copy of the checker is supplied here.
+This checkout adopts common CI source `1db73d1ddb342e348a2c9e8387f7bbc7ebb3225e`, policy1.0.1 and the exact tracked archive identified by `.attribution-release.json`. Its caller runs unconditionally for source, documentation, research and assets. The installed shared19 positive/negative conformance cases are required before release; no private validator is provided here.
 
-The coordinator must accept original source/license/lineage mapping, exact package bytes/public exports and real installed consumer evidence, then verify actual remote admission rules and caller/policy pins. Local tests alone do not assert remote enforcement. Current source-only status has no artifact digest, destination commit or publication pin. Node/OS/device compatibility remains unqualified until evidence exists. Preserve original sources and ignored evidence during rollout; only primary integrates application/removal/barrel/catalogue/lock edits.
+The coordinator must verify original source/license/lineage mapping, exact package bytes/public exports, real installed consumer evidence and actual remote admission. Local tests alone do not assert remote enforcement. Preserve the read-only original application archive and ignored evidence. Only the primary integrates application composition, public barrels, settings and lockfiles. Current receipts distinguish local qualification from consumer application adoption and browser/GPU acceptance.

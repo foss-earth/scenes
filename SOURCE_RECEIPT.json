@@ -1,16 +1,16 @@
 {
   "schemaVersion": 1,
   "owner": "foss-earth/scenes",
-  "preparedAtUtc": "2026-10-09T21-41-32Z",
-  "status": "SOURCE-ONLY current bytes; checks/history/installed consumers/artifacts/adoption/admission UNRUN",
+  "preparedAtUtc": "2026-10-09T22-26-57Z",
+  "status": "Current source seal; individual retained check receipts define qualification. Installed archive and application/remote adoption separately recorded in external release descriptor.",
   "sourceRevision": "90e23b3ee96f53ec5900afc5991a21fffa58649d",
-  "priorSourceReceipt": "build/source-only/2026-10-09T21-41-32Z/SOURCE_RECEIPT.json.before",
-  "sourceManifestPath": "build/source-only/2026-10-09T21-41-32Z/source-manifest.json",
+  "priorSourceReceipt": "build/source-only/restart-2026-10-09T22-23-20Z/before/SOURCE_RECEIPT.json",
+  "sourceManifestPath": "build/source-only/restart-2026-10-09T22-23-20Z/source-manifest.json",
   "sourceManifestEncoding": "UTF-8 sorted path JSON array, indent2, trailing LF; ignored outputs and receipt excluded",
-  "sourceManifestSha256": "a0981aa5810617ce1b516593a7b23b57290627ef26adbd7b3b810cec83e36880",
-  "sourceFileCount": 72,
+  "sourceManifestSha256": "9fa80faf341c27ae9f44740a4e5e9e366c46c63d681ef012099653b19874d66d",
+  "sourceFileCount": 73,
   "provenancePath": "SOURCE_PROVENANCE.json",
-  "provenanceSha256": "2f86bcd156f02d255db71fa14f3d87096e0b3dd9ea497e0b4c9a1e1993758f7c",
+  "provenanceSha256": "23b517c053676745bbcddee36ad95f100b5a63ecdf043c80f5d6cc31c9f3ca8a",
   "publicExports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -89,8 +89,8 @@
     },
     {
       "path": "README.md",
-      "sha256": "91de6f93260f8cefdea3bc060b11ea14ae5a7240ad6c9142af28b5fc75a40dee",
-      "bytes": 12370
+      "sha256": "7eb745e09d0992bbbe147c46359355c4afceb91a41e56b284ff8df82dcd7a079",
+      "bytes": 13533
     },
     {
       "path": "SECURITY.md",
@@ -109,18 +109,18 @@
     },
     {
       "path": "SOURCE_PROVENANCE.json",
-      "sha256": "2f86bcd156f02d255db71fa14f3d87096e0b3dd9ea497e0b4c9a1e1993758f7c",
-      "bytes": 49082
+      "sha256": "23b517c053676745bbcddee36ad95f100b5a63ecdf043c80f5d6cc31c9f3ca8a",
+      "bytes": 46126
     },
     {
       "path": "docs/admission.md",
-      "sha256": "15b94d29f4971e313f3bf94958d6d0cdaee9cc99942819b8f76afa6d8db45e11",
-      "bytes": 1055
+      "sha256": "d14cb37e8974567da0ef82582634e001afda05441e725bbf2e93a2610c5d6851",
+      "bytes": 1247
     },
     {
       "path": "docs/installed-consumer.md",
-      "sha256": "24589db6d404954b5b1f4191284e200380ce75b728c91845f1382881b6f770bb",
-      "bytes": 4852
+      "sha256": "c6b22c6b02654181525b8fe00e7fe6e5b271c6e44a582720491a4bfbdc0d15cb",
+      "bytes": 5537
     },
     {
       "path": "docs/legacy-lifecycle-assertions.json",
@@ -149,8 +149,8 @@
     },
     {
       "path": "fixtures/360-consumer.ts",
-      "sha256": "bff99a91bbb52e6ca29377af48ec7984d53ad469a422af424a2927df94f26ca7",
-      "bytes": 1644
+      "sha256": "8a5c90fc5ed7c3b2bc4969e946edcc4156c3da7713406b4e474df0aa89a97309",
+      "bytes": 2095
     },
     {
       "path": "fixtures/composition/SceneFileTests.ts",
@@ -199,8 +199,8 @@
     },
     {
       "path": "scripts/check-installed-artifact.mjs",
-      "sha256": "1a4018710133bc2a3ce1e2907126b2a408892c53815d7b6e4ac3d6c8c25498ad",
-      "bytes": 15476
+      "sha256": "e10e3ceac86f142c82b5008151f343e3e86b6475acb37b18974892c69e6c059e",
+      "bytes": 17253
     },
     {
       "path": "scripts/check-isolated-archive.mjs",
@@ -269,8 +269,8 @@
     },
     {
       "path": "src/ports.ts",
-      "sha256": "305de89ee82e8f384ed1dbb3da3a71852fe2be503a4be3eef765813e3141a5ad",
-      "bytes": 7404
+      "sha256": "b0defc0adf716a13d01361e7ba04665cf028fa3b14963ce62e8f50566e0e7d19",
+      "bytes": 7709
     },
     {
       "path": "src/savedImagesSection.ts",
@@ -309,8 +309,8 @@
     },
     {
       "path": "tests/consumer.ts",
-      "sha256": "5439b80ec1fc3783dfdf4c62f60b21df66fd84bf1b1309b7710089948ea55d47",
-      "bytes": 2511
+      "sha256": "af2e96601e8a321802863ff403d05a20714bf23edc827d865a495c7db396bfb7",
+      "bytes": 2806
     },
     {
       "path": "tests/controller.test.ts",
@@ -318,14 +318,14 @@
       "bytes": 5330
     },
     {
-      "path": "tests/fixtures/proposal-example.scene.json",
-      "sha256": "8e6bdf86606aacc55c00d442a1b2353189af7295c8695bf49422d86fb936072a",
-      "bytes": 3428
-    },
-    {
       "path": "tests/fixtures.ts",
       "sha256": "a546e7c276230298cfd282427914193503465f48aadb52b4a28fc870d0ec6b37",
       "bytes": 1781
+    },
+    {
+      "path": "tests/fixtures/proposal-example.scene.json",
+      "sha256": "8e6bdf86606aacc55c00d442a1b2353189af7295c8695bf49422d86fb936072a",
+      "bytes": 3428
     },
     {
       "path": "tests/history.test.ts",
@@ -339,8 +339,8 @@
     },
     {
       "path": "tests/node-check.test.mjs",
-      "sha256": "7a3586af1263ba8c0f581eb61974c18880e3add0b6e7c46e466cfa619bff6ebf",
-      "bytes": 7107
+      "sha256": "020ebe8f1e5cdfa125fc44d86925932741e4b01e761eac74a2ddc07fb27eb630",
+      "bytes": 7111
     },
     {
       "path": "tests/panel.test.ts",
@@ -388,6 +388,11 @@
       "bytes": 7809
     },
     {
+      "path": "tests/viewerStatus.test.ts",
+      "sha256": "9c7fd8edf62db9f5a77e1daef4dd49c4bc94e677af187760613afc71ea67b29d",
+      "bytes": 3382
+    },
+    {
       "path": "tsconfig.consumer.json",
       "sha256": "6431b660cb355916e8a9d53149bddf38188c98334a5166ebefc8752a8d445429",
       "bytes": 336
@@ -412,22 +417,80 @@
     "installedConformance": null,
     "fullIntendedRefAudit": null,
     "actualRemoteAdmissionVerified": false,
-    "docsOnlyMetadataSkipped": false
+    "docsOnlyMetadataSkipped": false,
+    "replacementPolicyCallerAdoption": "Queued; old immutable pin retained with historical scope"
   },
   "checksExecuted": [],
   "currentArtifact": null,
   "acceptedArtifacts": [],
   "actualConsumerAdoption": null,
-  "rollback": "Canonical original application remains live; frozen prior artifacts and earlier exact source receipts retained. New source has not replaced or retired any consumer.",
+  "rollback": "Read-only original Earth application archive, prior source receipts and artifacts remain intact. New source is prepared in independent foss-earth/scenes; no consumer replaced/retired or archive mutated.",
   "outstandingBlockers": [
-    "granted bounded owner and actual public-only consumer checks",
-    "exact replacement prerequisites",
-    "source/API/CSS link/asset compatibility",
-    "expanded clean lineage and actual complete intended publication scopes",
-    "actual installed CI conformance",
-    "final source/archive/export seals",
-    "actual app adoption",
-    "coordinator public transport and remote admission"
+    "Granted current-path lint/typecheck/build/owner fixtures including new viewer reading case; then bounded full CI once final inputs are ready",
+    "Actual installed artifact and strict Scenes/360 declaration consumer with full exact archive closure, guards and negative controls",
+    "Final source/archive/export seals, configured human commit and complete intended publication refs through installed common validator",
+    "Replacement common CI caller/policy pins and shared conformance after CI delivers them",
+    "Real independent Earth/Campus/Flight application adoption; coordinator remote admission/public transport"
   ],
-  "policySentence": "You cannot have AI as a co-author, or your contributions will be rejected."
+  "policySentence": "You cannot have AI as a co-author, or your contributions will be rejected.",
+  "sourceLease": "RELEASED",
+  "sourcePreparation": {
+    "record": "SOURCE_PROVENANCE.json#restartSourcePreparation20261009",
+    "checksExecuted": [],
+    "gitCommandsExecuted": [],
+    "sourceOriginalHashesPreserved": true,
+    "packageScopeUnchanged": true
+  },
+  "verifiedAtUtc": "2026-10-09T23:35:56.670238+00:00",
+  "currentSourceManifest": {
+    "path": "/Users/felg/gh/foss-earth/foss-earth.github.io/build/repository-split/checks/2026-10-09-granted-verification/scenes-sealed-source-files.json",
+    "sha256": "499a002871334203b0afb62cbb6c0fea38b241c8d54d7c846550150de51d5f58",
+    "fileCount": 74
+  },
+  "currentSharedCi": {
+    "revision": "1db73d1ddb342e348a2c9e8387f7bbc7ebb3225e",
+    "policySha256": "cdcda3c5d2968fe115e61627fca95ec744637de533750f1ee680c2a5ede49606",
+    "artifactSha256": "bd884d925b8a7339b15fa61a477cf652bb73d41cc68addf50a050ab6cb151611",
+    "descriptorSha256": "d60ee5067185a768f0890da2ed87d82dbfa08f28282e4d05a35e823c70307122",
+    "callerSha256": "b9fdfbf4bd61ed727abaef4fd9990b92714a6d2c1388feec600dc16337436b2c",
+    "fullIntendedRefs": "external release descriptor; mandatory complete nonempty audit after this commit",
+    "remoteAdmissionVerifiedByOwner": false
+  },
+  "currentChecks": [
+    {
+      "receipt": "/Users/felg/gh/foss-earth/foss-earth.github.io/build/repository-split/checks/2026-10-09-granted-verification/scenes-causal-lint.json",
+      "sha256": "f567cacbc15376313fae7d2d8645bf02afcba9677ac0f65ee4977a10c8470898",
+      "exitCode": 0
+    },
+    {
+      "receipt": "/Users/felg/gh/foss-earth/foss-earth.github.io/build/repository-split/checks/2026-10-09-granted-verification/scenes-causal-log-fixture.json",
+      "sha256": "279c4f2a803274c974972dec180b0dd0a34d6d328412cbd27c8678bb0212ef1d",
+      "exitCode": 0
+    },
+    {
+      "receipt": "/Users/felg/gh/foss-earth/foss-earth.github.io/build/repository-split/checks/2026-10-09-granted-verification/scenes-causal-type-build.json",
+      "sha256": "730eb845f965e4c33091965d93483e4a3fe72a9be5cd7787a6cb329b592e6d17",
+      "exitCode": 0
+    },
+    {
+      "receipt": "/Users/felg/gh/foss-earth/foss-earth.github.io/build/repository-split/checks/2026-10-09-granted-verification/scenes-ci-install.json",
+      "sha256": "4081c089825d8270816ce1c34b2b85e7827087e9c8a8cc8d9f5b9650aa5b3b68",
+      "exitCode": 0
+    },
+    {
+      "receipt": "/Users/felg/gh/foss-earth/foss-earth.github.io/build/repository-split/checks/2026-10-09-granted-verification/scenes-current-inputs-install.json",
+      "sha256": "938c681a715376c02dcc030a54007f2de1b022a8e4bdf061cda3e4d5fdaf670c",
+      "exitCode": 0
+    },
+    {
+      "receipt": "/Users/felg/gh/foss-earth/foss-earth.github.io/build/repository-split/checks/2026-10-09-granted-verification/scenes-final-ci.json",
+      "sha256": "d2a0b1d071e42dafc8e22bbf409f5d3345fbad354246c73681a046924c60131c",
+      "exitCode": 1
+    },
+    {
+      "receipt": "/Users/felg/gh/foss-earth/foss-earth.github.io/build/repository-split/checks/2026-10-09-granted-verification/scenes-finished-ci.json",
+      "sha256": "8ff841691b50b96af77049d629e59b6b9b1b09b0f5d75539b338b4001b2d084a",
+      "exitCode": 0
+    }
+  ]
 }

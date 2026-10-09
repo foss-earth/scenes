@@ -17,15 +17,18 @@ const createGameLog = (settings: ReturnType<typeof createSettingsRegistry>) => c
   timers: { set: (work, ms) => window.setTimeout(work, ms), clear: timer => { if (typeof timer === "number") window.clearTimeout(timer); } },
 });
 function createSceneController(options: { runtime: SceneRuntime; settings: ReturnType<typeof createSettingsRegistry>; canvas: HTMLElement; examples: []; baseUrl: string; loadOptions?: { onProgress(progress: SceneProgress): void } }): SceneController {
-  return createInjectedSceneController({ examples: options.examples, baseUrl: options.baseUrl, canvas: options.canvas, dragThresholdPx: () => 5,
+  const controller = createInjectedSceneController({ examples: options.examples, baseUrl: options.baseUrl, canvas: options.canvas, dragThresholdPx: () => 5,
     load: async (input, ports) => {
       const result = await resolveSceneInput(input, { fetch: globalThis.fetch, signal: ports.signal, representations: [], validateImageAsset: () => [],
-        onProgress: progress => { options.loadOptions?.onProgress(progress); ports.onProgress(progress); },
+        onProgress: ports.onProgress,
       });
       if (!result.ok) return result;
       throw new Error("These retained transport cases provide invalid manifests only; a real viewer/world binding is required for valid scenes.");
     },
   });
+  // The host observes the controller after it filters superseded transport generations.
+  if (options.loadOptions) controller.onProgress(options.loadOptions.onProgress);
+  return controller;
 }
 
 afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers(); });

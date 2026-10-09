@@ -1,5 +1,5 @@
 import { SCENE_FORMAT, SCENE_FORMAT_VERSION, validateScene, SCENE_DOCUMENT_PARAMETERS, checkSceneFiles as checkDeclaredSceneFiles } from "@foss-earth/scenes";
-import { createSavedImagesSection, connectSceneLog, type LoadSceneOptions, type SceneViewerPorts, type SceneWorldPorts, type SceneLogController, type SavedImagesSectionOptions } from "@foss-earth/scenes/browser";
+import { createSavedImagesSection, connectSceneLog, type LoadSceneOptions, type SceneViewerPorts, type SceneStatus, type SceneViewerImageDetail, type SceneWorldPorts, type SceneLogController, type SavedImagesSectionOptions } from "@foss-earth/scenes/browser";
 import { builtInSceneHooks, checkSceneFiles, checkSceneManifest, type SceneCheckSummary } from "@foss-earth/scenes/node";
 import { buildScenePreviewSheets } from "@foss-earth/scenes/preview-sheets";
 // Common owner contract is public from images; the scene root reexports scene types only.
@@ -9,6 +9,10 @@ import type { GameLog } from "@foss-earth/ui";
 declare const representations: readonly ImageRepresentationHooks[];
 declare const viewer: SceneViewerPorts;
 declare const world: SceneWorldPorts;
+declare const sceneStatus: SceneStatus;
+const viewerReading: SceneViewerImageDetail | null | undefined = sceneStatus.immersionDetail;
+const observedRepresentation: string | null = viewerReading?.representation ?? null;
+void observedRepresentation;
 const options: LoadSceneOptions = { representations, validateImageAsset: () => [], viewer, world, sessionId: "explicit-host-session", markerRadiusMeters: () => 1 };
 const result = validateScene({ format: SCENE_FORMAT, version: SCENE_FORMAT_VERSION, id: "host.scene", revision: "r1", title: "Host scene", assets: [], entities: [] }, options);
 void result; void SCENE_DOCUMENT_PARAMETERS;

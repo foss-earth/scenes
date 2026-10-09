@@ -22,7 +22,14 @@ export interface ScenePreparedImage {
   hover(active: boolean): void;
   dispose(): void;
 }
-export interface SceneViewerStatus { phase: ScenePhase; active: string | null; target: string | null; view?: ViewRecord | null; credits?: readonly (ImageAttribution & { assetId: string })[]; lastError?: string | null; renderingAvailable?: boolean; unavailableReason?: string | null }
+/** An optional observation published by the supplied viewer, never a scene target or estimate. */
+export interface SceneViewerImageDetail {
+  representation: string;
+  loading: string | null;
+  limitation: string | null;
+  progress?: readonly string[];
+}
+export interface SceneViewerStatus { phase: ScenePhase; active: string | null; target: string | null; view?: ViewRecord | null; immersionDetail?: SceneViewerImageDetail | null; credits?: readonly (ImageAttribution & { assetId: string })[]; lastError?: string | null; renderingAvailable?: boolean; unavailableReason?: string | null }
 /** One host-owned viewer binding. Its implementation owns GPU, navigation lease, input and frames. */
 export interface SceneViewerPorts {
   /** Creates metadata/hidden entries; this must not wait for every preview to download. */

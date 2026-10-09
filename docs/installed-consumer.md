@@ -1,11 +1,18 @@
 # Isolated source consumer preparation
 
-YOU CANNOT HAVE AI AS A CO-AUTHOR, OR YOUR CONTRIBUTIONS WILL BE REJECTED.
+Follow the [contribution policy](../CONTRIBUTING.md), including commit attribution.
 
 This harness is prepared source, UNRUN. Request the shared ledger slot before
 installing, building, packing or invoking it. Old foundation archives do not
 qualify the current checker, preview document or dependency increments. The
 coordinator must supply accepted new archive pins; none are asserted here.
+
+Run from the independent `foss-earth/scenes` checkout, with provider checkouts
+beside it under the organization group when using source links. The retained
+original application archive supplies recovery/evidence only. Existing logs at
+former staging paths do not qualify relocated links or these current bytes.
+Archive paths in the closure are explicit inputs, relative to its JSON file;
+the harness discovers no monolith, staging tree or sibling implementation.
 
 `node scripts/check-isolated-archive.mjs --archives=<closure.json> --archives-sha256=<64hex>`
 requires a complete local archive closure. The JSON has `schemaVersion: 1` and
@@ -28,7 +35,10 @@ The harness creates a fresh workspace and npm cache under this owner's dated
 `build/installed-consumer/`, uses offline installation with scripts disabled,
 and retains install/runtime/type logs and pin receipts. The installed compiler
 checks root and full public declarations, including actual Scenes/360 structural
-composition. Realpath guards reject runtime and declaration resolution outside
+composition and the optional published viewer-detail observation. Runtime
+fixtures cover reading updates, clearing and omission without inventing detail
+from targets or metadata. These new fixtures are SOURCE-ONLY and UNRUN.
+Realpath guards reject runtime and declaration resolution outside
 the workspace; independent runtime, CLI-process and declaration negative
 controls prove those guards are active. Public root/browser/panel, Node checker,
 preview document, schema/CSS, declarations and both bin entries are exercised.

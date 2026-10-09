@@ -96,7 +96,7 @@ describe("local publication reader and CLI", () => {
     expect(checkSceneManifest(manifest).ok).toBe(true);
     const child = spawnSync(process.execPath, [fileURLToPath(new URL("../node/check-cli.mjs", import.meta.url)), manifest, "--json", report], { encoding: "utf8" });
     expect(child.status).toBe(0); expect(child.stderr).toBe("");
-    expect(child.stdout).toMatch(/^OK: Empty fixture \(empty, revision r1\)\n  0 panoramas, 0 images, 0 groups, 0 links; manifest \d+ bytes\n  0 media files, 0.0 MiB\n$/);
+    expect(child.stdout).toMatch(/^OK: Empty fixture \(empty, revision r1\)\n {2}0 panoramas, 0 images, 0 groups, 0 links; manifest \d+ bytes\n {2}0 media files, 0.0 MiB\n$/);
     expect(JSON.parse(readFileSync(report, "utf8"))).toMatchObject({ ok: true, summary: { id: "empty", assets: 0, files: 0 } });
     writeFileSync(manifest, "{}");
     const invalid = spawnSync(process.execPath, [fileURLToPath(new URL("../node/check-cli.mjs", import.meta.url)), manifest], { encoding: "utf8" });
