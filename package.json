@@ -1,0 +1,108 @@
+{
+  "name": "@foss-earth/scenes",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Version-one scene envelope, placement, references and injected navigation orchestration",
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "sideEffects": [
+    "./styles/panel.css"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./schema.json": "./schema/scene-1.json",
+    "./browser": {
+      "types": "./dist/browser.d.ts",
+      "import": "./dist/browser.js"
+    },
+    "./panel": {
+      "types": "./dist/panel.d.ts",
+      "import": "./dist/panel.js"
+    },
+    "./panel.css": "./styles/panel.css",
+    "./node": {
+      "types": "./node/scene-check.d.mts",
+      "import": "./node/scene-check.mjs"
+    },
+    "./check-cli": "./node/check-cli.mjs",
+    "./preview-sheets": {
+      "types": "./node/preview-sheets.d.mts",
+      "import": "./node/preview-sheets.mjs"
+    },
+    "./build-preview-cli": "./node/build-preview-cli.mjs"
+  },
+  "files": [
+    "dist",
+    "src",
+    "schema",
+    "styles",
+    "tsconfig.json",
+    "LICENSE",
+    "SOURCE_PROVENANCE.json",
+    "README.md",
+    "docs",
+    "node",
+    "fixtures/composition",
+    "NOTICE",
+    "SOURCE_LINEAGE.json",
+    "SOURCE_PLAN.json",
+    "AGENTS.md",
+    "CODE_OF_CONDUCT.md",
+    "CONTRIBUTING.md",
+    "SECURITY.md",
+    "SOURCE_RECEIPT.json"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json --incremental --tsBuildInfoFile node_modules/.tmp/build.tsbuildinfo",
+    "typecheck": "tsc -p tsconfig.json --noEmit --incremental --tsBuildInfoFile node_modules/.tmp/typecheck.tsbuildinfo",
+    "test": "vitest run --maxWorkers=50%",
+    "ci": "npm run check:conformance && npm run check:implementation",
+    "check:consumer": "tsc -p tsconfig.consumer.json",
+    "lint": "eslint . --cache --cache-strategy content --cache-location node_modules/.cache/eslint/",
+    "check:implementation": "npm run lint && npm run typecheck && npm run build && npm test && node scripts/check-public-consumer.mjs && npm run check:consumer",
+    "check:conformance": "node node_modules/@foss-earth/ci/bin/conformance.mjs --consumer . --trusted-release .attribution-release.json --output-root build/common-conformance",
+    "test:installed-consumer": "node scripts/check-isolated-archive.mjs",
+    "check:attribution": "node node_modules/@foss-earth/ci/bin/attribution.mjs --repo . --refs-file build/repository-split/intended-publication-refs.json"
+  },
+  "devDependencies": {
+    "@types/node": "24.12.4",
+    "jsdom": "29.1.1",
+    "typescript": "5.9.3",
+    "vitest": "4.1.6",
+    "@eslint/js": "9.39.4",
+    "eslint": "9.39.4",
+    "typescript-eslint": "8.59.3",
+    "globals": "17.6.0",
+    "@foss-earth/ui": "0.1.0"
+  },
+  "fossEarthSplit": {
+    "sourceRevision": "90e23b3ee96f53ec5900afc5991a21fffa58649d",
+    "admission": "pending pinned foss-earth/ci caller, shared conformance and coordinator lineage acceptance"
+  },
+  "dependencies": {
+    "@foss-earth/images": "0.1.0",
+    "@foss-earth/360": "0.1.0",
+    "@foss-earth/tiled-cubemap": "0.1.0",
+    "@foss-earth/preview-sheets": "0.1.0",
+    "@foss-earth/cubemap": "0.1.0"
+  },
+  "peerDependencies": {
+    "@foss-earth/ui": "0.1.0"
+  },
+  "peerDependenciesMeta": {
+    "@foss-earth/ui": {
+      "optional": true
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/foss-earth/scenes.git"
+  },
+  "bin": {
+    "foss-earth-check-scene": "./node/check-cli.mjs",
+    "foss-earth-build-preview-sheets": "./node/build-preview-cli.mjs"
+  }
+}

@@ -1,0 +1,429 @@
+{
+  "sourceRevision": "90e23b3ee96f53ec5900afc5991a21fffa58649d",
+  "sourcePath": "src/scenes/loadScene.test.ts",
+  "sourceSha256": "985e668da3974cc915fa5e7ff0fdbd586afb9f24b33e883870e0e3ab469218ec",
+  "assertionCount": 42,
+  "routes": [
+    {
+      "originalAssertion": "fails an invalid manifest before any request",
+      "responsibility": "scenes + supplied engine/360 composition",
+      "preparedOrRequiredPublicFixtures": [
+        "tests/manifest.test.ts",
+        "tests/sceneHandle.test.ts",
+        "tests/history.test.ts"
+      ],
+      "status": "Scenes port assertions prepared; actual engine/viewer mixed composition acceptance pending"
+    },
+    {
+      "originalAssertion": "keeps placements pending until the ground is displayed, then places each orb above it and opens the overview",
+      "responsibility": "scenes + supplied engine/360 composition",
+      "preparedOrRequiredPublicFixtures": [
+        "tests/manifest.test.ts",
+        "tests/sceneHandle.test.ts",
+        "tests/history.test.ts"
+      ],
+      "status": "Scenes port assertions prepared; actual engine/viewer mixed composition acceptance pending"
+    },
+    {
+      "originalAssertion": "opens the overview without waiting for previews, and shows one preview while another still downloads",
+      "responsibility": "scenes + supplied engine/360 composition",
+      "preparedOrRequiredPublicFixtures": [
+        "tests/manifest.test.ts",
+        "tests/sceneHandle.test.ts",
+        "tests/history.test.ts"
+      ],
+      "status": "Scenes port assertions prepared; actual engine/viewer mixed composition acceptance pending"
+    },
+    {
+      "originalAssertion": "cancels automatic terrain preparation on new input and ignores its late result",
+      "responsibility": "360 + supplied engine/renderer/representation composition",
+      "preparedOrRequiredPublicFixtures": [
+        "@foss-earth/360/tests/viewer.test.ts",
+        "@foss-earth/360/tests/flight.test.ts",
+        "@foss-earth/360/tests/browserInput.test.ts"
+      ],
+      "status": "Original mixed assertion retained in immutable source snapshot; route obligation recorded, no equivalence or execution claimed"
+    },
+    {
+      "originalAssertion": "does not apply an externally cancelled overview after its terrain arrives",
+      "responsibility": "scenes + supplied engine/360 composition",
+      "preparedOrRequiredPublicFixtures": [
+        "tests/manifest.test.ts",
+        "tests/sceneHandle.test.ts",
+        "tests/history.test.ts"
+      ],
+      "status": "Scenes port assertions prepared; actual engine/viewer mixed composition acceptance pending"
+    },
+    {
+      "originalAssertion": "gives up a pending overview when a controller or the host changes the camera",
+      "responsibility": "360 + supplied engine/renderer/representation composition",
+      "preparedOrRequiredPublicFixtures": [
+        "@foss-earth/360/tests/viewer.test.ts",
+        "@foss-earth/360/tests/flight.test.ts",
+        "@foss-earth/360/tests/browserInput.test.ts"
+      ],
+      "status": "Original mixed assertion retained in immutable source snapshot; route obligation recorded, no equivalence or execution claimed"
+    },
+    {
+      "originalAssertion": "reports a streamed manifest's actual bytes and turns interrupted bodies into scene failures",
+      "responsibility": "scenes + supplied engine/360 composition",
+      "preparedOrRequiredPublicFixtures": [
+        "tests/manifest.test.ts",
+        "tests/sceneHandle.test.ts",
+        "tests/history.test.ts"
+      ],
+      "status": "Scenes port assertions prepared; actual engine/viewer mixed composition acceptance pending"
+    },
+    {
+      "originalAssertion": "without the flight, enters through an expanding reveal, hands off with the camera's own view, and exits to the overview it left",
+      "responsibility": "360 + supplied engine/renderer/representation composition",
+      "preparedOrRequiredPublicFixtures": [
+        "@foss-earth/360/tests/viewer.test.ts",
+        "@foss-earth/360/tests/flight.test.ts",
+        "@foss-earth/360/tests/browserInput.test.ts"
+      ],
+      "status": "Original mixed assertion retained in immutable source snapshot; route obligation recorded, no equivalence or execution claimed"
+    },
+    {
+      "originalAssertion": "flies the camera into the orb and hands off inside it, then pulls back out facing the way the view faces",
+      "responsibility": "360 + supplied engine/renderer/representation composition",
+      "preparedOrRequiredPublicFixtures": [
+        "@foss-earth/360/tests/viewer.test.ts",
+        "@foss-earth/360/tests/flight.test.ts",
+        "@foss-earth/360/tests/browserInput.test.ts"
+      ],
+      "status": "Original mixed assertion retained in immutable source snapshot; route obligation recorded, no equivalence or execution claimed"
+    },
+    {
+      "originalAssertion": "gives the camera to the globe where a flight out cut short by Escape got to, moving on outward, and a Back during it joins the exit",
+      "responsibility": "360 + supplied engine/renderer/representation composition",
+      "preparedOrRequiredPublicFixtures": [
+        "@foss-earth/360/tests/viewer.test.ts",
+        "@foss-earth/360/tests/flight.test.ts",
+        "@foss-earth/360/tests/browserInput.test.ts"
+      ],
+      "status": "Original mixed assertion retained in immutable source snapshot; route obligation recorded, no equivalence or execution claimed"
+    },
+    {
+      "originalAssertion": "gives the camera to the globe at once where a flight in cut short by a swipe got to, moving on toward the orb, entering nothing",
+      "responsibility": "360 + supplied engine/renderer/representation composition",
+      "preparedOrRequiredPublicFixtures": [
+        "@foss-earth/360/tests/viewer.test.ts",
+        "@foss-earth/360/tests/flight.test.ts",
+        "@foss-earth/360/tests/browserInput.test.ts"
+      ],
+      "status": "Original mixed assertion retained in immutable source snapshot; route obligation recorded, no equivalence or execution claimed"
+    },
+    {
+      "originalAssertion": "gives a mouse press that cuts a flight short to the globe, as a drag from where it is",
+      "responsibility": "360 + supplied engine/renderer/representation composition",
+      "preparedOrRequiredPublicFixtures": [
+        "@foss-earth/360/tests/viewer.test.ts",
+        "@foss-earth/360/tests/flight.test.ts",
+        "@foss-earth/360/tests/browserInput.test.ts"
+      ],
+      "status": "Original mixed assertion retained in immutable source snapshot; route obligation recorded, no equivalence or execution claimed"
+    },
+    {
+      "originalAssertion": "lets an entry take over from a flight cut short while its sphere is still turning back into the orb",
+      "responsibility": "360 + supplied engine/renderer/representation composition",
+      "preparedOrRequiredPublicFixtures": [
+        "@foss-earth/360/tests/viewer.test.ts",
+        "@foss-earth/360/tests/flight.test.ts",
+        "@foss-earth/360/tests/browserInput.test.ts"
+      ],
+      "status": "Original mixed assertion retained in immutable source snapshot; route obligation recorded, no equivalence or execution claimed"
+    },
+    {
+      "originalAssertion": "gives the camera to the globe at rest where a flight out got to when an entry takes over",
+      "responsibility": "360 + supplied engine/renderer/representation composition",
+      "preparedOrRequiredPublicFixtures": [
+        "@foss-earth/360/tests/viewer.test.ts",
+        "@foss-earth/360/tests/flight.test.ts",
+        "@foss-earth/360/tests/browserInput.test.ts"
+      ],
+      "status": "Original mixed assertion retained in immutable source snapshot; route obligation recorded, no equivalence or execution claimed"
+    },
+    {
+      "originalAssertion": "does not take a swipe's momentum for input: Escape while the image glides still pulls out all the way",
+      "responsibility": "360 + supplied engine/renderer/representation composition",
+      "preparedOrRequiredPublicFixtures": [
+        "@foss-earth/360/tests/viewer.test.ts",
+        "@foss-earth/360/tests/flight.test.ts",
+        "@foss-earth/360/tests/browserInput.test.ts"
+      ],
+      "status": "Original mixed assertion retained in immutable source snapshot; route obligation recorded, no equivalence or execution claimed"
+    },
+    {
+      "originalAssertion": "completes an exit whose flight the runtime ends, at the overview it left",
+      "responsibility": "360 + supplied engine/renderer/representation composition",
+      "preparedOrRequiredPublicFixtures": [
+        "@foss-earth/360/tests/viewer.test.ts",
+        "@foss-earth/360/tests/flight.test.ts",
+        "@foss-earth/360/tests/browserInput.test.ts"
+      ],
+      "status": "Original mixed assertion retained in immutable source snapshot; route obligation recorded, no equivalence or execution claimed"
+    },
+    {
+      "originalAssertion": "keeps the reveal and the fade when the runtime cannot move its camera or motion is reduced",
+      "responsibility": "360 + supplied engine/renderer/representation composition",
+      "preparedOrRequiredPublicFixtures": [
+        "@foss-earth/360/tests/viewer.test.ts",
+        "@foss-earth/360/tests/flight.test.ts",
+        "@foss-earth/360/tests/browserInput.test.ts"
+      ],
+      "status": "Original mixed assertion retained in immutable source snapshot; route obligation recorded, no equivalence or execution claimed"
+    },
+    {
+      "originalAssertion": "draws the scene's outline, grows a hovered orb to its hover scale and back, and resets it on entering",
+      "responsibility": "360 + supplied engine/renderer/representation composition",
+      "preparedOrRequiredPublicFixtures": [
+        "@foss-earth/360/tests/viewer.test.ts",
+        "@foss-earth/360/tests/flight.test.ts",
+        "@foss-earth/360/tests/browserInput.test.ts"
+      ],
+      "status": "Original mixed assertion retained in immutable source snapshot; route obligation recorded, no equivalence or execution claimed"
+    },
+    {
+      "originalAssertion": "turns the view every frame while an arrow key is held, and glides after a flick, holding rendering only meanwhile",
+      "responsibility": "360 + supplied engine/renderer/representation composition",
+      "preparedOrRequiredPublicFixtures": [
+        "@foss-earth/360/tests/viewer.test.ts",
+        "@foss-earth/360/tests/flight.test.ts",
+        "@foss-earth/360/tests/browserInput.test.ts"
+      ],
+      "status": "Original mixed assertion retained in immutable source snapshot; route obligation recorded, no equivalence or execution claimed"
+    },
+    {
+      "originalAssertion": "shows the largest image the image detail allows, says why nothing larger is, and chooses again when the detail moves",
+      "responsibility": "360 + supplied engine/renderer/representation composition",
+      "preparedOrRequiredPublicFixtures": [
+        "@foss-earth/360/tests/viewer.test.ts",
+        "@foss-earth/360/tests/flight.test.ts",
+        "@foss-earth/360/tests/browserInput.test.ts"
+      ],
+      "status": "Original mixed assertion retained in immutable source snapshot; route obligation recorded, no equivalence or execution claimed"
+    },
+    {
+      "originalAssertion": "names the budget that keeps a larger image out, and loads it once the budget allows",
+      "responsibility": "360 + supplied engine/renderer/representation composition",
+      "preparedOrRequiredPublicFixtures": [
+        "@foss-earth/360/tests/viewer.test.ts",
+        "@foss-earth/360/tests/flight.test.ts",
+        "@foss-earth/360/tests/browserInput.test.ts"
+      ],
+      "status": "Original mixed assertion retained in immutable source snapshot; route obligation recorded, no equivalence or execution claimed"
+    },
+    {
+      "originalAssertion": "reports a larger image that fails to load, keeps the one on screen, and says why in the detail",
+      "responsibility": "360 + supplied engine/renderer/representation composition",
+      "preparedOrRequiredPublicFixtures": [
+        "@foss-earth/360/tests/viewer.test.ts",
+        "@foss-earth/360/tests/flight.test.ts",
+        "@foss-earth/360/tests/browserInput.test.ts"
+      ],
+      "status": "Original mixed assertion retained in immutable source snapshot; route obligation recorded, no equivalence or execution claimed"
+    },
+    {
+      "originalAssertion": "shows equi-angular tiles over the preview at once, loads the view's tiles, and lists them with their progress",
+      "responsibility": "360 + supplied engine/renderer/representation composition",
+      "preparedOrRequiredPublicFixtures": [
+        "@foss-earth/360/tests/viewer.test.ts",
+        "@foss-earth/360/tests/flight.test.ts",
+        "@foss-earth/360/tests/browserInput.test.ts"
+      ],
+      "status": "Original mixed assertion retained in immutable source snapshot; route obligation recorded, no equivalence or execution claimed"
+    },
+    {
+      "originalAssertion": "switches representation live: tiles load behind a whole image before crossfading, and a revisit finds its tiles held",
+      "responsibility": "360 + supplied engine/renderer/representation composition",
+      "preparedOrRequiredPublicFixtures": [
+        "@foss-earth/360/tests/viewer.test.ts",
+        "@foss-earth/360/tests/flight.test.ts",
+        "@foss-earth/360/tests/browserInput.test.ts"
+      ],
+      "status": "Original mixed assertion retained in immutable source snapshot; route obligation recorded, no equivalence or execution claimed"
+    },
+    {
+      "originalAssertion": "shows the other tiles when the chosen kind is missing, and whole images when tiles fail",
+      "responsibility": "360 + supplied engine/renderer/representation composition",
+      "preparedOrRequiredPublicFixtures": [
+        "@foss-earth/360/tests/viewer.test.ts",
+        "@foss-earth/360/tests/flight.test.ts",
+        "@foss-earth/360/tests/browserInput.test.ts"
+      ],
+      "status": "Original mixed assertion retained in immutable source snapshot; route obligation recorded, no equivalence or execution claimed"
+    },
+    {
+      "originalAssertion": "reports an orb's preview that fails in the background, and entering it once, not twice",
+      "responsibility": "360 + supplied engine/renderer/representation composition",
+      "preparedOrRequiredPublicFixtures": [
+        "@foss-earth/360/tests/viewer.test.ts",
+        "@foss-earth/360/tests/flight.test.ts",
+        "@foss-earth/360/tests/browserInput.test.ts"
+      ],
+      "status": "Original mixed assertion retained in immutable source snapshot; route obligation recorded, no equivalence or execution claimed"
+    },
+    {
+      "originalAssertion": "follows a link, keeps the original overview, and Back from B returns to A",
+      "responsibility": "scenes + supplied engine/360 composition",
+      "preparedOrRequiredPublicFixtures": [
+        "tests/manifest.test.ts",
+        "tests/sceneHandle.test.ts",
+        "tests/history.test.ts"
+      ],
+      "status": "Scenes port assertions prepared; actual engine/viewer mixed composition acceptance pending"
+    },
+    {
+      "originalAssertion": "uses an explicit arrival view on a link, and cuts under reduced motion",
+      "responsibility": "scenes + supplied engine/360 composition",
+      "preparedOrRequiredPublicFixtures": [
+        "tests/manifest.test.ts",
+        "tests/sceneHandle.test.ts",
+        "tests/history.test.ts"
+      ],
+      "status": "Scenes port assertions prepared; actual engine/viewer mixed composition acceptance pending"
+    },
+    {
+      "originalAssertion": "cancels an entry to the prior view, holding nothing and pushing no history",
+      "responsibility": "scenes + supplied engine/360 composition",
+      "preparedOrRequiredPublicFixtures": [
+        "tests/manifest.test.ts",
+        "tests/sceneHandle.test.ts",
+        "tests/history.test.ts"
+      ],
+      "status": "Scenes port assertions prepared; actual engine/viewer mixed composition acceptance pending"
+    },
+    {
+      "originalAssertion": "ends immersion at the overview when the device is lost, and reloads previews after",
+      "responsibility": "360 + supplied engine/renderer/representation composition",
+      "preparedOrRequiredPublicFixtures": [
+        "@foss-earth/360/tests/viewer.test.ts",
+        "@foss-earth/360/tests/flight.test.ts",
+        "@foss-earth/360/tests/browserInput.test.ts"
+      ],
+      "status": "Original mixed assertion retained in immutable source snapshot; route obligation recorded, no equivalence or execution claimed"
+    },
+    {
+      "originalAssertion": "keeps the scene when a replacement is invalid, and swaps atomically when it is valid",
+      "responsibility": "scenes + supplied engine/360 composition",
+      "preparedOrRequiredPublicFixtures": [
+        "tests/manifest.test.ts",
+        "tests/sceneHandle.test.ts",
+        "tests/history.test.ts"
+      ],
+      "status": "Scenes port assertions prepared; actual engine/viewer mixed composition acceptance pending"
+    },
+    {
+      "originalAssertion": "disposes everything once, and a late upload cannot bring an orb back",
+      "responsibility": "scenes + supplied engine/360 composition",
+      "preparedOrRequiredPublicFixtures": [
+        "tests/manifest.test.ts",
+        "tests/sceneHandle.test.ts",
+        "tests/history.test.ts"
+      ],
+      "status": "Scenes port assertions prepared; actual engine/viewer mixed composition acceptance pending"
+    },
+    {
+      "originalAssertion": "lists every panorama and refuses entry when panoramas cannot be drawn",
+      "responsibility": "scenes + supplied engine/360 composition",
+      "preparedOrRequiredPublicFixtures": [
+        "tests/manifest.test.ts",
+        "tests/sceneHandle.test.ts",
+        "tests/history.test.ts"
+      ],
+      "status": "Scenes port assertions prepared; actual engine/viewer mixed composition acceptance pending"
+    },
+    {
+      "originalAssertion": "loads the smallest preview for an orb drawn small, and nothing sharper until it is drawn larger",
+      "responsibility": "360 + supplied engine/renderer/representation composition",
+      "preparedOrRequiredPublicFixtures": [
+        "@foss-earth/360/tests/viewer.test.ts",
+        "@foss-earth/360/tests/flight.test.ts",
+        "@foss-earth/360/tests/browserInput.test.ts"
+      ],
+      "status": "Original mixed assertion retained in immutable source snapshot; route obligation recorded, no equivalence or execution claimed"
+    },
+    {
+      "originalAssertion": "goes back to the preview its size needs once the hold has passed, and gives the sharper one up",
+      "responsibility": "360 + supplied engine/renderer/representation composition",
+      "preparedOrRequiredPublicFixtures": [
+        "@foss-earth/360/tests/viewer.test.ts",
+        "@foss-earth/360/tests/flight.test.ts",
+        "@foss-earth/360/tests/browserInput.test.ts"
+      ],
+      "status": "Original mixed assertion retained in immutable source snapshot; route obligation recorded, no equivalence or execution claimed"
+    },
+    {
+      "originalAssertion": "goes back to its smallest preview once out of view for the hold, unless it is to keep what it has while the scene is open",
+      "responsibility": "360 + supplied engine/renderer/representation composition",
+      "preparedOrRequiredPublicFixtures": [
+        "@foss-earth/360/tests/viewer.test.ts",
+        "@foss-earth/360/tests/flight.test.ts",
+        "@foss-earth/360/tests/browserInput.test.ts"
+      ],
+      "status": "Original mixed assertion retained in immutable source snapshot; route obligation recorded, no equivalence or execution claimed"
+    },
+    {
+      "originalAssertion": "leaves an orb that is off the screen with the preview it has, however large it would be drawn",
+      "responsibility": "360 + supplied engine/renderer/representation composition",
+      "preparedOrRequiredPublicFixtures": [
+        "@foss-earth/360/tests/viewer.test.ts",
+        "@foss-earth/360/tests/flight.test.ts",
+        "@foss-earth/360/tests/browserInput.test.ts"
+      ],
+      "status": "Original mixed assertion retained in immutable source snapshot; route obligation recorded, no equivalence or execution claimed"
+    },
+    {
+      "originalAssertion": "reports a sharper preview that fails once, keeps the one it has, and does not ask again every frame",
+      "responsibility": "360 + supplied engine/renderer/representation composition",
+      "preparedOrRequiredPublicFixtures": [
+        "@foss-earth/360/tests/viewer.test.ts",
+        "@foss-earth/360/tests/flight.test.ts",
+        "@foss-earth/360/tests/browserInput.test.ts"
+      ],
+      "status": "Original mixed assertion retained in immutable source snapshot; route obligation recorded, no equivalence or execution claimed"
+    },
+    {
+      "originalAssertion": "asks for the largest preview as an entry begins, and the panorama opens on whichever the orb shows",
+      "responsibility": "360 + supplied engine/renderer/representation composition",
+      "preparedOrRequiredPublicFixtures": [
+        "@foss-earth/360/tests/viewer.test.ts",
+        "@foss-earth/360/tests/flight.test.ts",
+        "@foss-earth/360/tests/browserInput.test.ts"
+      ],
+      "status": "Original mixed assertion retained in immutable source snapshot; route obligation recorded, no equivalence or execution claimed"
+    },
+    {
+      "originalAssertion": "loads the tiles of the view it opens on while the camera is still flying in, into the atlas the panorama then shows",
+      "responsibility": "360 + supplied engine/renderer/representation composition",
+      "preparedOrRequiredPublicFixtures": [
+        "@foss-earth/360/tests/viewer.test.ts",
+        "@foss-earth/360/tests/flight.test.ts",
+        "@foss-earth/360/tests/browserInput.test.ts"
+      ],
+      "status": "Original mixed assertion retained in immutable source snapshot; route obligation recorded, no equivalence or execution claimed"
+    },
+    {
+      "originalAssertion": "fetches no tiles on the way in when whole images are chosen",
+      "responsibility": "360 + supplied engine/renderer/representation composition",
+      "preparedOrRequiredPublicFixtures": [
+        "@foss-earth/360/tests/viewer.test.ts",
+        "@foss-earth/360/tests/flight.test.ts",
+        "@foss-earth/360/tests/browserInput.test.ts"
+      ],
+      "status": "Original mixed assertion retained in immutable source snapshot; route obligation recorded, no equivalence or execution claimed"
+    },
+    {
+      "originalAssertion": "keeps what arrived when the flight is cut short, and stops asking",
+      "responsibility": "360 + supplied engine/renderer/representation composition",
+      "preparedOrRequiredPublicFixtures": [
+        "@foss-earth/360/tests/viewer.test.ts",
+        "@foss-earth/360/tests/flight.test.ts",
+        "@foss-earth/360/tests/browserInput.test.ts"
+      ],
+      "status": "Original mixed assertion retained in immutable source snapshot; route obligation recorded, no equivalence or execution claimed"
+    }
+  ],
+  "warning": "Mapping is source responsibility evidence, not a passing test or proof every original mixed assertion has an equivalent current fixture. Canonical composition must validate engine/viewer momentum, input, resource readiness and tile fallback before retiring old mixed tests."
+}

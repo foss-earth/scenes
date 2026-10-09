@@ -1,0 +1,433 @@
+{
+  "schemaVersion": 1,
+  "owner": "foss-earth/scenes",
+  "preparedAtUtc": "2026-10-09T21-41-32Z",
+  "status": "SOURCE-ONLY current bytes; checks/history/installed consumers/artifacts/adoption/admission UNRUN",
+  "sourceRevision": "90e23b3ee96f53ec5900afc5991a21fffa58649d",
+  "priorSourceReceipt": "build/source-only/2026-10-09T21-41-32Z/SOURCE_RECEIPT.json.before",
+  "sourceManifestPath": "build/source-only/2026-10-09T21-41-32Z/source-manifest.json",
+  "sourceManifestEncoding": "UTF-8 sorted path JSON array, indent2, trailing LF; ignored outputs and receipt excluded",
+  "sourceManifestSha256": "a0981aa5810617ce1b516593a7b23b57290627ef26adbd7b3b810cec83e36880",
+  "sourceFileCount": 72,
+  "provenancePath": "SOURCE_PROVENANCE.json",
+  "provenanceSha256": "2f86bcd156f02d255db71fa14f3d87096e0b3dd9ea497e0b4c9a1e1993758f7c",
+  "publicExports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./schema.json": "./schema/scene-1.json",
+    "./browser": {
+      "types": "./dist/browser.d.ts",
+      "import": "./dist/browser.js"
+    },
+    "./panel": {
+      "types": "./dist/panel.d.ts",
+      "import": "./dist/panel.js"
+    },
+    "./panel.css": "./styles/panel.css",
+    "./node": {
+      "types": "./node/scene-check.d.mts",
+      "import": "./node/scene-check.mjs"
+    },
+    "./check-cli": "./node/check-cli.mjs",
+    "./preview-sheets": {
+      "types": "./node/preview-sheets.d.mts",
+      "import": "./node/preview-sheets.mjs"
+    },
+    "./build-preview-cli": "./node/build-preview-cli.mjs"
+  },
+  "bins": {
+    "foss-earth-check-scene": "./node/check-cli.mjs",
+    "foss-earth-build-preview-sheets": "./node/build-preview-cli.mjs"
+  },
+  "sourceFiles": [
+    {
+      "path": ".attribution-release.json",
+      "sha256": "c5324ea9476d99afbc5f63e9d5a15d597dd7ee27546499c392046b55fc361131",
+      "bytes": 2045
+    },
+    {
+      "path": ".attribution.json",
+      "sha256": "e4493f3031a5051398339cf9649a8e18efb8ece96f512761d8d145daf8347f7a",
+      "bytes": 491
+    },
+    {
+      "path": ".github/workflows/attribution-check.yml",
+      "sha256": "63349507da9d004752bb0e43c681089dfd9fd6c26bf8047738cb19025f15135e",
+      "bytes": 406
+    },
+    {
+      "path": ".gitignore",
+      "sha256": "f3d23da263ae08c2ca7a946b438f6de1c8091a073ad1c3e5f45631ec286bab41",
+      "bytes": 27
+    },
+    {
+      "path": "AGENTS.md",
+      "sha256": "85eda2b7ca0f62daec6a079df415d34b02e90e38e69d792640033afcb7aac09b",
+      "bytes": 572
+    },
+    {
+      "path": "CODE_OF_CONDUCT.md",
+      "sha256": "c3a907b9e659a0f5a4c701be1b34a7d416526c3a99f129bf4d3b9db09c7ffa9d",
+      "bytes": 3442
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "sha256": "ae17c446b45bb7819aa2f12775c1acaf1a2626affbb49a8b0e578dccecadd69c",
+      "bytes": 2613
+    },
+    {
+      "path": "LICENSE",
+      "sha256": "0d96a4ff68ad6d4b6f1f30f713b18d5184912ba8dd389f86aa7710db079abcb0",
+      "bytes": 34523
+    },
+    {
+      "path": "NOTICE",
+      "sha256": "323da85db96d02ed0cf48db889efa184037f538f002e868aeeff396ebb44a993",
+      "bytes": 359
+    },
+    {
+      "path": "README.md",
+      "sha256": "91de6f93260f8cefdea3bc060b11ea14ae5a7240ad6c9142af28b5fc75a40dee",
+      "bytes": 12370
+    },
+    {
+      "path": "SECURITY.md",
+      "sha256": "6baf6d3c1755360f5d902275c893074fd17af2fc10c140fe932b8a90d77d9942",
+      "bytes": 791
+    },
+    {
+      "path": "SOURCE_LINEAGE.json",
+      "sha256": "7c0a2f13e64dd5507151553528a44d334cc74c71ede1c5171361eaa4cabda0a4",
+      "bytes": 18078
+    },
+    {
+      "path": "SOURCE_PLAN.json",
+      "sha256": "c67c93ede6ce03ee8a31c3fce0c8e63fea0293a2c2831b8665ec2adfcf96caa0",
+      "bytes": 20347
+    },
+    {
+      "path": "SOURCE_PROVENANCE.json",
+      "sha256": "2f86bcd156f02d255db71fa14f3d87096e0b3dd9ea497e0b4c9a1e1993758f7c",
+      "bytes": 49082
+    },
+    {
+      "path": "docs/admission.md",
+      "sha256": "15b94d29f4971e313f3bf94958d6d0cdaee9cc99942819b8f76afa6d8db45e11",
+      "bytes": 1055
+    },
+    {
+      "path": "docs/installed-consumer.md",
+      "sha256": "24589db6d404954b5b1f4191284e200380ce75b728c91845f1382881b6f770bb",
+      "bytes": 4852
+    },
+    {
+      "path": "docs/legacy-lifecycle-assertions.json",
+      "sha256": "833ebb5dce7b2def0edc455803656bfd4a628ed797e38344c3ab38fdc7b35b62",
+      "bytes": 23294
+    },
+    {
+      "path": "docs/navigation-lifecycle.md",
+      "sha256": "b1970bc398a87de0a08a948d2c7cb61a846ba79fc22e12fec15dfd3b16757a39",
+      "bytes": 1589
+    },
+    {
+      "path": "docs/node-checker.md",
+      "sha256": "d69c0945cf1184731607a8e0948b0657e3d0fed3802dc4ce71c0bb7d06aff038",
+      "bytes": 2698
+    },
+    {
+      "path": "docs/proposals/panorama-scenes.md",
+      "sha256": "022e7cacf9d5677b4c57dde6608b5e85d8dd16e711ccbf5eb1d9acf3830ec33f",
+      "bytes": 118170
+    },
+    {
+      "path": "eslint.config.js",
+      "sha256": "6392b05308c0b3b3528120361dad3b6d0441f70fcc83567782f76fcae135dc57",
+      "bytes": 630
+    },
+    {
+      "path": "fixtures/360-consumer.ts",
+      "sha256": "bff99a91bbb52e6ca29377af48ec7984d53ad469a422af424a2927df94f26ca7",
+      "bytes": 1644
+    },
+    {
+      "path": "fixtures/composition/SceneFileTests.ts",
+      "sha256": "b4e7cfb160cafcfd0e3369403df4c3f3d473318fce4b62c5094d1e2603019d9f",
+      "bytes": 5006
+    },
+    {
+      "path": "node/build-preview-cli.mjs",
+      "sha256": "acc7a9865373b24506b1f752ba454d2ae146953f5ec11685e9b5d82e01c1f5df",
+      "bytes": 2415
+    },
+    {
+      "path": "node/check-cli.mjs",
+      "sha256": "3f94f9c36664b93468a5b2330ab62ed2abe81b2a604691b783ca8f5f8d670f43",
+      "bytes": 3639
+    },
+    {
+      "path": "node/preview-sheets.d.mts",
+      "sha256": "07717de2dff77639a1a36e2032330820e1a810c62bd1dab478ebe045274e9700",
+      "bytes": 361
+    },
+    {
+      "path": "node/preview-sheets.mjs",
+      "sha256": "d173d826aa52b038c306d2040689dee2b0f56e9563a4608215c6c346644d32f0",
+      "bytes": 3933
+    },
+    {
+      "path": "node/scene-check.d.mts",
+      "sha256": "22a3e67e88e7f96ec37a09596b43d0b42470c3a9e9a7eeaff231ba5c911a0454",
+      "bytes": 1290
+    },
+    {
+      "path": "node/scene-check.mjs",
+      "sha256": "36e445d3e4a2b8fdc6cd42a337e3527047ad72ad031b8edaf46c8862ba07ca0d",
+      "bytes": 5789
+    },
+    {
+      "path": "package.json",
+      "sha256": "e5c29e96aad9e4703137d28fc1afa1b66e19d134112cb8f66944f960f570eb9d",
+      "bytes": 3538
+    },
+    {
+      "path": "schema/scene-1.json",
+      "sha256": "352c3de3a0d37be9497489ac44abfe298d87c199a066d43bdad6b171d89f3621",
+      "bytes": 16764
+    },
+    {
+      "path": "scripts/check-installed-artifact.mjs",
+      "sha256": "1a4018710133bc2a3ce1e2907126b2a408892c53815d7b6e4ac3d6c8c25498ad",
+      "bytes": 15476
+    },
+    {
+      "path": "scripts/check-isolated-archive.mjs",
+      "sha256": "87af7f10a8cc1324a7af3176e56842eff173d7b23392ce8a55c7f038e1897c8f",
+      "bytes": 9383
+    },
+    {
+      "path": "scripts/check-public-consumer.mjs",
+      "sha256": "aa7bbd960a3f0d8a41f4fb20ee3baeb8159181de8d56806b8a5fc2b62b85c09d",
+      "bytes": 2320
+    },
+    {
+      "path": "scripts/runtime-guard.mjs",
+      "sha256": "2a5d3277cff45ecb590a9368dd2e1bac7fe884fa8f47b11a2091dbae42547d17",
+      "bytes": 849
+    },
+    {
+      "path": "src/browser.ts",
+      "sha256": "eae111dc26bbdd964084f2773219d818374e45cb96cdb5a42a230f147ff939f4",
+      "bytes": 228
+    },
+    {
+      "path": "src/catalogue.ts",
+      "sha256": "b2e32b11dd373038f77158a840b2fe307f0d5553040c20fe9d27d2ae50703ee8",
+      "bytes": 2355
+    },
+    {
+      "path": "src/checkSceneFiles.ts",
+      "sha256": "09c7bd92e4daaaf2e8d721b12a527cadb109c0214d20c9a87f7f685411495127",
+      "bytes": 4750
+    },
+    {
+      "path": "src/controller.ts",
+      "sha256": "482388edb41ffc6efe065854a43038acedc0b5c48d0fcc80ed7b98bb1c181e38",
+      "bytes": 10002
+    },
+    {
+      "path": "src/envelopeChecks.ts",
+      "sha256": "9f4fb73e1fec791d2dcc45a3a3a62c6212a96a10f3fe20d70e4bbfb14b72c1d4",
+      "bytes": 13384
+    },
+    {
+      "path": "src/format.ts",
+      "sha256": "2ec2b270b077407f1c25653b8f0a47a37c77bb1f6e2d1238191928a9ced3c140",
+      "bytes": 5893
+    },
+    {
+      "path": "src/history.ts",
+      "sha256": "2cee56f3d393297763a76c166f0a309f2496deb2b4ef06278c28477daee238ca",
+      "bytes": 3819
+    },
+    {
+      "path": "src/index.ts",
+      "sha256": "2107b8666b493aacf57498714c82d37f0801d5cbd5f50ab77dab310c45d46772",
+      "bytes": 164
+    },
+    {
+      "path": "src/manifest.ts",
+      "sha256": "20fd6370d10e56d8bf908d99d9f62030b2b08d60a3f2a932ccc9ccb7bb8af23d",
+      "bytes": 5890
+    },
+    {
+      "path": "src/panel.ts",
+      "sha256": "b155c1a5dcd8f1d561f125c8f3b79273f6c66bda74646fc1599cff905c88abb8",
+      "bytes": 13016
+    },
+    {
+      "path": "src/ports.ts",
+      "sha256": "305de89ee82e8f384ed1dbb3da3a71852fe2be503a4be3eef765813e3141a5ad",
+      "bytes": 7404
+    },
+    {
+      "path": "src/savedImagesSection.ts",
+      "sha256": "89f47a8883f8f42a037bf28f795247c3fbc1d134c84bcddf138112839917570d",
+      "bytes": 8276
+    },
+    {
+      "path": "src/sceneHandle.ts",
+      "sha256": "1cf6531ae1d7fa697d48f88f31468e9345fbec454354e089bf84138e6442b51f",
+      "bytes": 23672
+    },
+    {
+      "path": "src/sceneLog.ts",
+      "sha256": "61b58a160fc09c6843d306a566eb8035fd422d7a9b0805d4df02cd57647cab8c",
+      "bytes": 8317
+    },
+    {
+      "path": "src/schema.ts",
+      "sha256": "a5fbcc7029bdb510422da5770728b68bd56a3f3864cda3963c4381e60fc48633",
+      "bytes": 2006
+    },
+    {
+      "path": "src/validateScene.ts",
+      "sha256": "5dd9f61b5f5a2622699931102e4509b06632a9e7a00173b52bfccbaf03134070",
+      "bytes": 14635
+    },
+    {
+      "path": "styles/panel.css",
+      "sha256": "1221df4d8e4e8a1b99119e33f260e8e9b703efe5b423795c1029e8cafe9dc433",
+      "bytes": 1980
+    },
+    {
+      "path": "tests/checkSceneFiles.test.ts",
+      "sha256": "00c30f14e1727ae723edc3b2035bac2f1935858ef7f75cbf857ea003aa2e959e",
+      "bytes": 3499
+    },
+    {
+      "path": "tests/consumer.ts",
+      "sha256": "5439b80ec1fc3783dfdf4c62f60b21df66fd84bf1b1309b7710089948ea55d47",
+      "bytes": 2511
+    },
+    {
+      "path": "tests/controller.test.ts",
+      "sha256": "3180d62e0407a0b7a89c13696e4f22498c5a2181b8d6d00ed80a8fe1fc28737a",
+      "bytes": 5330
+    },
+    {
+      "path": "tests/fixtures/proposal-example.scene.json",
+      "sha256": "8e6bdf86606aacc55c00d442a1b2353189af7295c8695bf49422d86fb936072a",
+      "bytes": 3428
+    },
+    {
+      "path": "tests/fixtures.ts",
+      "sha256": "a546e7c276230298cfd282427914193503465f48aadb52b4a28fc870d0ec6b37",
+      "bytes": 1781
+    },
+    {
+      "path": "tests/history.test.ts",
+      "sha256": "eb59e770b368ce093a9585ef5a4d85980210495fdf36832f3930356fafb369eb",
+      "bytes": 2927
+    },
+    {
+      "path": "tests/manifest.test.ts",
+      "sha256": "07d6e89c0345b8a54c086291c1c860a55cd8e84f45048473406c2fbf200df00b",
+      "bytes": 3936
+    },
+    {
+      "path": "tests/node-check.test.mjs",
+      "sha256": "7a3586af1263ba8c0f581eb61974c18880e3add0b6e7c46e466cfa619bff6ebf",
+      "bytes": 7107
+    },
+    {
+      "path": "tests/panel.test.ts",
+      "sha256": "4e7cc9eb4b62a4e0710e737e14da9bb2e315219d873a0c1c405683759695495d",
+      "bytes": 4844
+    },
+    {
+      "path": "tests/preview-files.fixture.mjs",
+      "sha256": "9fb2a70943f5d8433a170258295c9a0be1d085b684c87b828302ac076dde9ed2",
+      "bytes": 1537
+    },
+    {
+      "path": "tests/preview-files.test.mjs",
+      "sha256": "1b76dbc13c84758ddd9a2507e5b4c564d0e86c891902337e6d3b1cec5915fbd3",
+      "bytes": 8801
+    },
+    {
+      "path": "tests/savedImagesLifecycle.test.ts",
+      "sha256": "361db9bfddf848840549534462ce06256984f24ee8e34ab20b5dbae581e02ac1",
+      "bytes": 7484
+    },
+    {
+      "path": "tests/savedImagesSection.test.ts",
+      "sha256": "8b11a48043cd95aa9dfebbde4e00f34ae7e914894efbec997867e7bd61087a95",
+      "bytes": 3846
+    },
+    {
+      "path": "tests/sceneHandle.test.ts",
+      "sha256": "33c3bf795d98301403a140d56d39441741ec969a8eac837a65ac931c1dfb7d0c",
+      "bytes": 21342
+    },
+    {
+      "path": "tests/sceneLog.test.ts",
+      "sha256": "3cffbfe2a7c33ab1781e1c87290e7d177393818f3bde9c2b95f7ef6ab87e3125",
+      "bytes": 17407
+    },
+    {
+      "path": "tests/schema.test.ts",
+      "sha256": "aaec193dff84efdd2ac40b86524386f67d62f4e8ffb82655c1f4cc169a960dc8",
+      "bytes": 1947
+    },
+    {
+      "path": "tests/validateScene.test.ts",
+      "sha256": "a8fda9658e6ce86579dc0f8f5022df97e0c0efccb6bd7327d99a4a4977c28b1c",
+      "bytes": 7809
+    },
+    {
+      "path": "tsconfig.consumer.json",
+      "sha256": "6431b660cb355916e8a9d53149bddf38188c98334a5166ebefc8752a8d445429",
+      "bytes": 336
+    },
+    {
+      "path": "tsconfig.json",
+      "sha256": "004b4a9b4c500c3e49b34dcf8b2f5ff03711b76a0aa685abb605bc8a6a72ebd6",
+      "bytes": 381
+    },
+    {
+      "path": "vitest.config.ts",
+      "sha256": "a8f657ceedbbfbc8665312cd91d90e9cc2cb6e84485c914ac47fa433172aae0f",
+      "bytes": 342
+    }
+  ],
+  "frozenFoundation": null,
+  "sharedCi": {
+    "revision": "9e046dd482e0229dc7c7b2d71b079d5905664656",
+    "archiveSha256": "450ede699f55f9b9c78146eadb73de7c6297e56553e7d7f9e5b164786a7beb24",
+    "policySha256": "9ca88bf5861685e22e65e5f39fa65b05faaf9c218875fccbecce1b9f2dca5bd3",
+    "callerSha256": "63349507da9d004752bb0e43c681089dfd9fd6c26bf8047738cb19025f15135e",
+    "installedConformance": null,
+    "fullIntendedRefAudit": null,
+    "actualRemoteAdmissionVerified": false,
+    "docsOnlyMetadataSkipped": false
+  },
+  "checksExecuted": [],
+  "currentArtifact": null,
+  "acceptedArtifacts": [],
+  "actualConsumerAdoption": null,
+  "rollback": "Canonical original application remains live; frozen prior artifacts and earlier exact source receipts retained. New source has not replaced or retired any consumer.",
+  "outstandingBlockers": [
+    "granted bounded owner and actual public-only consumer checks",
+    "exact replacement prerequisites",
+    "source/API/CSS link/asset compatibility",
+    "expanded clean lineage and actual complete intended publication scopes",
+    "actual installed CI conformance",
+    "final source/archive/export seals",
+    "actual app adoption",
+    "coordinator public transport and remote admission"
+  ],
+  "policySentence": "You cannot have AI as a co-author, or your contributions will be rejected."
+}

@@ -1,0 +1,17 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+for (const name of ["document", "window", "navigator", "fetch", "requestAnimationFrame"]) Object.defineProperty(globalThis, name, { configurable: true, get() { throw new Error(`Pure import read ${name}`); } });
+const core = await import("@foss-earth/scenes"), browser = await import("@foss-earth/scenes/browser"), panel = await import("@foss-earth/scenes/panel");
+const node = await import("@foss-earth/scenes/node"), preview = await import("@foss-earth/scenes/preview-sheets");
+for (const name of ["document", "window", "navigator", "fetch", "requestAnimationFrame"]) delete globalThis[name];
+assert.equal(core.SCENE_FORMAT_VERSION, 1);
+const result = core.validateScene({ format: core.SCENE_FORMAT, version: 1, id: "fixture", revision: "r1", title: "Explicit host scene", assets: [], entities: [] }, { representations: [], validateImageAsset: () => [] });
+assert.equal(result.ok, true); assert.deepEqual(result.scene.entityOrder, []);
+let calls = 0;
+const controller = browser.createSceneController({ examples: [], baseUrl: "https://host.example/", load() { calls += 1; throw new Error("No implicit load"); } }); controller.destroy(); assert.equal(calls, 0);
+assert.equal(typeof panel.createScenesPanel, "function"); assert.equal(typeof browser.loadScene, "function");
+assert.equal(typeof core.checkSceneFiles, "function"); assert.equal(typeof node.checkSceneManifest, "function"); assert.equal(typeof preview.buildScenePreviewSheets, "function");
+for (const name of ["index", "browser", "panel"]) { assert.ok(readFileSync(new URL(`../dist/${name}.d.ts`, import.meta.url), "utf8").length); assert.doesNotMatch(readFileSync(new URL(`../dist/${name}.js`, import.meta.url), "utf8"), /from ["']\.[^"']+(?<!\.js)["']/); }
+assert.equal(JSON.parse(readFileSync(new URL(import.meta.resolve("@foss-earth/scenes/schema.json")), "utf8")).properties.format.const, core.SCENE_FORMAT);
+for (const entry of ["./node", "./preview-sheets", "./check-cli", "./build-preview-cli"]) assert.ok(readFileSync(new URL(import.meta.resolve(`@foss-earth/scenes/${entry.slice(2)}`)), "utf8").length);
+process.stdout.write("Public scene envelope/browser/panel/Node/preview/schema/CLI entries loaded without host globals; no implicit requests or viewer creation.\n");

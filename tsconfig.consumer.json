@@ -1,0 +1,4 @@
+{
+  "compilerOptions": { "target": "ES2022", "module": "NodeNext", "moduleResolution": "NodeNext", "strict": true, "noEmit": true, "skipLibCheck": false, "lib": ["ES2022", "DOM", "DOM.Iterable"], "types": ["node"], "incremental": true, "tsBuildInfoFile": "node_modules/.tmp/consumer.tsbuildinfo" },
+  "include": ["tests/consumer.ts"]
+}
