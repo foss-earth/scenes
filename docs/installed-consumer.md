@@ -1,4 +1,26 @@
+# Actual installed Scenes composition qualification
+
+The composition fixture now invokes the production Preview composition-node
+owner through its public export. The Node route also exercises its default
+owner, required content equivalence, aliases and finite memory/pixel/work
+admission. Historical SOURCE_ONLY/UNRUN descriptions below refer to preparation
+before this combined grant. The original request/support remain preserved.
+Current qualification and exact pins are external receipts under
+`build/repository-split/checks/2026-10-10-preview-scenes-qualified-delivery`.
+The final 65-package consumer closure replaces only Images, Preview and Scenes;
+the other 62 archive identities/bytes remain unchanged. Fresh runtime/declaration
+and negative guards remain required. Local qualification is not Campus boot,
+browser/renderer or remote admission.
+
 # Isolated source consumer preparation
+
+The [checked scene-composition contract](scene-composition.md) adds pure and
+Node composition exports, strict consumers and an actual installed two-child
+fixture with drift/missing-media/order/cross-link/missing-owner negatives.
+Those 2026-10-10 additions are SOURCE-ONLY and UNRUN. The synthetic sheet hook
+is fixture-only; Campus requires a separate checked public preview-sheet owner
+composition hook. Existing closure, realpath, optional-runtime and negative
+guards remain required.
 
 Follow the [contribution policy](../CONTRIBUTING.md), including commit attribution.
 
@@ -76,5 +98,6 @@ qualified by these Node/jsdom fixtures.
 the immutable trusted-release descriptor and `build/common-conformance` output.
 `npm run check:implementation` preserves the owner lint/type/build/test/consumer
 chain; `npm run ci` runs conformance then that chain without recursion. Conformance,
-intended publication ref audit, installed package artifacts, real app adoption
-and actual remote admission all remain pending their separate receipts.
+intended publication ref audit and installed package qualification have exact
+current delivery receipts in the combined qualification evidence. Real app
+adoption and actual remote admission remain separate gates.

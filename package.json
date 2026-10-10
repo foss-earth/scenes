@@ -27,6 +27,14 @@
       "types": "./node/scene-check.d.mts",
       "import": "./node/scene-check.mjs"
     },
+    "./composition": {
+      "types": "./dist/composition.d.ts",
+      "import": "./dist/composition.js"
+    },
+    "./composition-node": {
+      "types": "./node/composition.d.mts",
+      "import": "./node/composition.mjs"
+    },
     "./check-cli": "./node/check-cli.mjs",
     "./preview-sheets": {
       "types": "./node/preview-sheets.d.mts",

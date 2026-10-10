@@ -2,6 +2,8 @@ import { SCENE_FORMAT, SCENE_FORMAT_VERSION, validateScene, SCENE_DOCUMENT_PARAM
 import { createSavedImagesSection, connectSceneLog, type LoadSceneOptions, type SceneViewerPorts, type SceneStatus, type SceneViewerImageDetail, type SceneWorldPorts, type SceneLogController, type SavedImagesSectionOptions } from "@foss-earth/scenes/browser";
 import { builtInSceneHooks, checkSceneFiles, checkSceneManifest, type SceneCheckSummary } from "@foss-earth/scenes/node";
 import { buildScenePreviewSheets } from "@foss-earth/scenes/preview-sheets";
+import { composeSceneDocuments, type SceneCompositionOptions, type SceneCompositionRequest, type SceneCompositionResult } from "@foss-earth/scenes/composition";
+import { composeScenes, builtInSceneCompositionOwners, type NodeSceneCompositionOptions } from "@foss-earth/scenes/composition-node";
 // Common owner contract is public from images; the scene root reexports scene types only.
 import type { RepresentationHooks as ImageRepresentationHooks } from "@foss-earth/images";
 import type { MediaStore } from "@foss-earth/images";
@@ -10,6 +12,12 @@ declare const representations: readonly ImageRepresentationHooks[];
 declare const viewer: SceneViewerPorts;
 declare const world: SceneWorldPorts;
 declare const sceneStatus: SceneStatus;
+declare const compositionRequest: SceneCompositionRequest;
+declare const compositionOptions: SceneCompositionOptions;
+declare const nodeCompositionOptions: NodeSceneCompositionOptions;
+const composed: SceneCompositionResult = composeSceneDocuments(compositionRequest, compositionOptions);
+const composedWithNode: SceneCompositionResult = composeScenes(compositionRequest, nodeCompositionOptions);
+void composed.provenance.children; void composedWithNode.sha256; void builtInSceneCompositionOwners;
 const viewerReading: SceneViewerImageDetail | null | undefined = sceneStatus.immersionDetail;
 const observedRepresentation: string | null = viewerReading?.representation ?? null;
 void observedRepresentation;
@@ -30,3 +38,11 @@ export function composeScenePresentation(document: Document, source: MediaStore,
   return { contribution: { ...saved, section: "saved" as const, title: "Saved images" }, offLog };
 }
 // This file never starts a viewer or transport; it compiles solely against public declarations.
+
+import { createPreviewSheetsCompositionOwner } from "@foss-earth/preview-sheets/composition";
+import { createNodePreviewSheetsCompositionOwner } from "@foss-earth/preview-sheets/composition-node";
+import { builtInSceneCompositionExtensions } from "@foss-earth/scenes/composition-node";
+import type { SceneCompositionExtensionOwner } from "@foss-earth/scenes/composition";
+const purePreviewPort: SceneCompositionExtensionOwner = createPreviewSheetsCompositionOwner();
+const nodePreviewPort: SceneCompositionExtensionOwner = createNodePreviewSheetsCompositionOwner({ verificationLimits: { maxMemoryBytes: 2000000 } });
+void [purePreviewPort, nodePreviewPort, builtInSceneCompositionExtensions];

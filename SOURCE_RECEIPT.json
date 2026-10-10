@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
   "owner": "foss-earth/scenes",
-  "preparedAtUtc": "2026-10-09T22-26-57Z",
-  "status": "Current portable source seal; external exact delivery describes implementation/browser/ref qualification and outstanding remote gates.",
+  "preparedAtUtc": "2026-10-10T19:48:26.623358+00:00",
+  "status": "Production composition candidate using actual checked Preview public owner; current exact qualification is recorded under qualifiedCompositionDelivery. Historical frozen source-only request/preparation and prior releases retained.",
   "sourceRevision": "90e23b3ee96f53ec5900afc5991a21fffa58649d",
-  "priorSourceReceipt": "build/source-only/restart-2026-10-09T22-23-20Z/before/SOURCE_RECEIPT.json",
-  "sourceManifestPath": "build/source-only/restart-2026-10-09T22-23-20Z/source-manifest.json",
+  "priorSourceReceipt": "build/source-only/scene-composition-20261010/originals/SOURCE_RECEIPT.json",
+  "sourceManifestPath": "build/source-only/scene-composition-20261010/source-manifest.json",
   "sourceManifestEncoding": "UTF-8 sorted path JSON array, indent2, trailing LF; ignored outputs and receipt excluded",
-  "sourceManifestSha256": "9fa80faf341c27ae9f44740a4e5e9e366c46c63d681ef012099653b19874d66d",
-  "sourceFileCount": 73,
+  "sourceManifestSha256": "72a22d3cb372234c07f1c829a7a2a2d28669e6299f057c5e5291767b4b708e32",
+  "sourceFileCount": 80,
   "provenancePath": "SOURCE_PROVENANCE.json",
   "provenanceSha256": "23b517c053676745bbcddee36ad95f100b5a63ecdf043c80f5d6cc31c9f3ca8a",
   "publicExports": {
@@ -30,6 +30,14 @@
       "types": "./node/scene-check.d.mts",
       "import": "./node/scene-check.mjs"
     },
+    "./composition": {
+      "types": "./dist/composition.d.ts",
+      "import": "./dist/composition.js"
+    },
+    "./composition-node": {
+      "types": "./node/composition.d.mts",
+      "import": "./node/composition.mjs"
+    },
     "./check-cli": "./node/check-cli.mjs",
     "./preview-sheets": {
       "types": "./node/preview-sheets.d.mts",
@@ -44,17 +52,17 @@
   "sourceFiles": [
     {
       "path": ".attribution-release.json",
-      "sha256": "c5324ea9476d99afbc5f63e9d5a15d597dd7ee27546499c392046b55fc361131",
-      "bytes": 2045
+      "sha256": "d60ee5067185a768f0890da2ed87d82dbfa08f28282e4d05a35e823c70307122",
+      "bytes": 2929
     },
     {
       "path": ".attribution.json",
-      "sha256": "e4493f3031a5051398339cf9649a8e18efb8ece96f512761d8d145daf8347f7a",
+      "sha256": "f4be8310bb514e13808115779d13d130ac3bbed54e4fca9de6af00602da8d994",
       "bytes": 491
     },
     {
       "path": ".github/workflows/attribution-check.yml",
-      "sha256": "63349507da9d004752bb0e43c681089dfd9fd6c26bf8047738cb19025f15135e",
+      "sha256": "b9fdfbf4bd61ed727abaef4fd9990b92714a6d2c1388feec600dc16337436b2c",
       "bytes": 406
     },
     {
@@ -113,14 +121,19 @@
       "bytes": 46126
     },
     {
+      "path": "deps/foss-earth-ci-1db73d1ddb342e348a2c9e8387f7bbc7ebb3225e.tgz",
+      "sha256": "bd884d925b8a7339b15fa61a477cf652bb73d41cc68addf50a050ab6cb151611",
+      "bytes": 68164
+    },
+    {
       "path": "docs/admission.md",
-      "sha256": "d14cb37e8974567da0ef82582634e001afda05441e725bbf2e93a2610c5d6851",
-      "bytes": 1247
+      "sha256": "0b246ffcb610ef108aca8c2e9b32aab0c988967e1f94c9eb5fe9c716aeb9d490",
+      "bytes": 979
     },
     {
       "path": "docs/installed-consumer.md",
-      "sha256": "c6b22c6b02654181525b8fe00e7fe6e5b271c6e44a582720491a4bfbdc0d15cb",
-      "bytes": 5537
+      "sha256": "30a790a6b4529f2969260e061eb60af43a5fbe5818c2088ce512ef72328de948",
+      "bytes": 6025
     },
     {
       "path": "docs/legacy-lifecycle-assertions.json",
@@ -143,6 +156,11 @@
       "bytes": 118170
     },
     {
+      "path": "docs/scene-composition.md",
+      "sha256": "a5b207aeda2447dd3b02591994197eda520712ac6565953f3f9e1800ed820736",
+      "bytes": 11971
+    },
+    {
       "path": "eslint.config.js",
       "sha256": "6392b05308c0b3b3528120361dad3b6d0441f70fcc83567782f76fcae135dc57",
       "bytes": 630
@@ -158,6 +176,11 @@
       "bytes": 5006
     },
     {
+      "path": "fixtures/composition/release-composition.fixture.mjs",
+      "sha256": "f38276ce17bb512457b3766b2334426e226ee7aac7afa1f0e768e95eb245d6cc",
+      "bytes": 10607
+    },
+    {
       "path": "node/build-preview-cli.mjs",
       "sha256": "acc7a9865373b24506b1f752ba454d2ae146953f5ec11685e9b5d82e01c1f5df",
       "bytes": 2415
@@ -166,6 +189,16 @@
       "path": "node/check-cli.mjs",
       "sha256": "3f94f9c36664b93468a5b2330ab62ed2abe81b2a604691b783ca8f5f8d670f43",
       "bytes": 3639
+    },
+    {
+      "path": "node/composition.d.mts",
+      "sha256": "36484be11ac56421e48270c2be05d9e7d278a6d1342038156a991368a0b70688",
+      "bytes": 704
+    },
+    {
+      "path": "node/composition.mjs",
+      "sha256": "7da27aaa00910e20f9c3af88998b2f522cdfb362abb50acba902faa2a13c27b6",
+      "bytes": 1987
     },
     {
       "path": "node/preview-sheets.d.mts",
@@ -189,8 +222,8 @@
     },
     {
       "path": "package.json",
-      "sha256": "e5c29e96aad9e4703137d28fc1afa1b66e19d134112cb8f66944f960f570eb9d",
-      "bytes": 3538
+      "sha256": "1d8b07855f75cbde63b0fe1f669b8d9dd5fffe68161bbc64e35c407c393336d3",
+      "bytes": 4039
     },
     {
       "path": "schema/scene-1.json",
@@ -199,18 +232,18 @@
     },
     {
       "path": "scripts/check-installed-artifact.mjs",
-      "sha256": "e10e3ceac86f142c82b5008151f343e3e86b6475acb37b18974892c69e6c059e",
-      "bytes": 17253
+      "sha256": "d69b6848d785b5b2c9d63a0e3963414e96606e604b9556c38526a386e3295ecd",
+      "bytes": 19523
     },
     {
       "path": "scripts/check-isolated-archive.mjs",
-      "sha256": "87af7f10a8cc1324a7af3176e56842eff173d7b23392ce8a55c7f038e1897c8f",
-      "bytes": 9383
+      "sha256": "44364be98fc508d0c462905f4c9abbdf330abdffac4b607fc11a9e3bdf4b9fc8",
+      "bytes": 9814
     },
     {
       "path": "scripts/check-public-consumer.mjs",
-      "sha256": "aa7bbd960a3f0d8a41f4fb20ee3baeb8159181de8d56806b8a5fc2b62b85c09d",
-      "bytes": 2320
+      "sha256": "ddad00a82c6d43d0ebae22637d66d4e2bedead21a1fad0287be4e14ac8a0c59a",
+      "bytes": 2949
     },
     {
       "path": "scripts/runtime-guard.mjs",
@@ -231,6 +264,11 @@
       "path": "src/checkSceneFiles.ts",
       "sha256": "09c7bd92e4daaaf2e8d721b12a527cadb109c0214d20c9a87f7f685411495127",
       "bytes": 4750
+    },
+    {
+      "path": "src/composition.ts",
+      "sha256": "0a9a4704f8f60cf8f03d0366b10a064950e21c76f8a3498b89cf4d7a0ff538d6",
+      "bytes": 36421
     },
     {
       "path": "src/controller.ts",
@@ -254,8 +292,8 @@
     },
     {
       "path": "src/index.ts",
-      "sha256": "2107b8666b493aacf57498714c82d37f0801d5cbd5f50ab77dab310c45d46772",
-      "bytes": 164
+      "sha256": "4ce6eb653bc3c162c45552b55ac8d2dac3e8e6debb220cd8c303fa813673ee2b",
+      "bytes": 198
     },
     {
       "path": "src/manifest.ts",
@@ -308,9 +346,14 @@
       "bytes": 3499
     },
     {
+      "path": "tests/composition.test.mjs",
+      "sha256": "8d407256921a94d1fe24fefa4c20023684afec25f91719b70424f85e7c8061f5",
+      "bytes": 8467
+    },
+    {
       "path": "tests/consumer.ts",
-      "sha256": "af2e96601e8a321802863ff403d05a20714bf23edc827d865a495c7db396bfb7",
-      "bytes": 2806
+      "sha256": "561f26e176b36929e763cf494fd642e3af8907cb25ee7ee6df4058636b41b7fa",
+      "bytes": 3599
     },
     {
       "path": "tests/controller.test.ts",
@@ -374,8 +417,8 @@
     },
     {
       "path": "tests/sceneLog.test.ts",
-      "sha256": "3cffbfe2a7c33ab1781e1c87290e7d177393818f3bde9c2b95f7ef6ab87e3125",
-      "bytes": 17407
+      "sha256": "d4bb11efefbb43faff2ef69343a4f722c34af26ff5dee47efb7236ddcd6ae945",
+      "bytes": 17541
     },
     {
       "path": "tests/schema.test.ts",
@@ -499,5 +542,129 @@
     "lastQualifiedSource": "2ac022d043901e4ad6d3a4cda86f6dc2a5f90f3c",
     "lastQualifiedArchiveSha256": "95e441e5f166c8eb6c1778c88433646f21774849573807dd467fa7ac377b48be",
     "currentPreparation": "Metadata-only portable publication candidate, uncommitted/unpacked/unverified. Prior exact archive/descriptor remains qualified and unchanged."
+  },
+  "historicalSceneCompositionPreparation": {
+    "state": "SOURCE_ONLY_FROZEN_UNRUN",
+    "baseRevision": "d58408d90542a73282d8bf544c54e0c9bf847b56",
+    "baseTree": "ec9468c02c0e5105a2c9d6b59776f0e043afc0db",
+    "indexSha256": "3cbe2c66715fd590c1525e22675414edbd3107db66ad6d9ee153dbcc8da1e4d4",
+    "assignment": "/Users/felg/gh/0sfs-archive/build/repository-split/assignments/earth-campus-scene-composition-source-20261010.md",
+    "contract": "docs/scene-composition.md",
+    "pureExport": "@foss-earth/scenes/composition",
+    "nodeExport": "@foss-earth/scenes/composition-node",
+    "fixtures": "tests/composition.test.mjs",
+    "preparedFixtureCases": 25,
+    "testOnlySheetAdapter": "fixtures/composition/release-composition.fixture.mjs",
+    "previewSheetOwnerHook": "REQUIRED; current preview-sheets public validation APIs do not establish an owner-approved composition merge/remap export",
+    "verificationRequest": "build/source-only/scene-composition-20261010/verification-request.json",
+    "sourceOnlyChecksExecuted": false,
+    "policyChanged": false,
+    "sourceCommitMade": false,
+    "siblingWrites": false,
+    "preservedRepairRelease": "/Users/felg/gh/foss-earth/app/build/repository-split/checks/2026-10-10-google-key-user-repair/source-and-slot-release.json"
+  },
+  "sceneComposition": {
+    "pureExport": "@foss-earth/scenes/composition",
+    "nodeExport": "@foss-earth/scenes/composition-node",
+    "productionPreviewOwner": "@foss-earth/preview-sheets/composition-node:createNodePreviewSheetsCompositionOwner",
+    "productionDefault": "builtInSceneCompositionExtensions",
+    "testAdapterRemoved": true,
+    "fixtureCases": 29,
+    "qualificationEvidence": "build/repository-split/checks/2026-10-10-preview-scenes-qualified-delivery",
+    "priorUnexecutedRequestSha256": "460e57bdf7fe014858df9f488d9655053eee320b62ad1eee881ecf7cda9b2222",
+    "actualRemoteAdmissionVerified": false,
+    "checkedLeafInputs": [
+      {
+        "name": "@foss-earth/images",
+        "version": "0.1.0",
+        "sourceCommit": "02523eae1c8c3acd461bfe13111116fbb8d80f28",
+        "sha256": "cca1df6798d4d5eccf347ac995e00816529b84bdda7b6914268ff2998341f1f8",
+        "bytes": 158207
+      },
+      {
+        "name": "@foss-earth/preview-sheets",
+        "version": "0.1.0",
+        "sourceCommit": "4b688d341e8d557f19ef6ab19528fe541cbde1bc",
+        "sha256": "254d5e36d447abdd6924d1b020ebd2df6e609f879a88ef5eaf35d6e225e2dc82",
+        "bytes": 140727
+      }
+    ]
+  },
+  "qualifiedCompositionDelivery": {
+    "schemaVersion": 1,
+    "preparedAtUtc": "2026-10-10T20:59:59.798388+00:00",
+    "baseRevision": "d58408d90542a73282d8bf544c54e0c9bf847b56",
+    "sourceManifest": {
+      "path": "build/repository-split/checks/2026-10-10-preview-scenes-qualified-delivery/final-source-manifest.json",
+      "sha256": "7c0adbbda093109c5d497ee1888ea252e0ef82cce3960548e074b847e781d34a",
+      "sizeBytes": 13776,
+      "files": 80,
+      "excludes": "SOURCE_RECEIPT.json to avoid a circular seal; final receipt/archive/commit separately pinned in exact delivery"
+    },
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      },
+      "./schema.json": "./schema/scene-1.json",
+      "./browser": {
+        "types": "./dist/browser.d.ts",
+        "import": "./dist/browser.js"
+      },
+      "./panel": {
+        "types": "./dist/panel.d.ts",
+        "import": "./dist/panel.js"
+      },
+      "./panel.css": "./styles/panel.css",
+      "./node": {
+        "types": "./node/scene-check.d.mts",
+        "import": "./node/scene-check.mjs"
+      },
+      "./composition": {
+        "types": "./dist/composition.d.ts",
+        "import": "./dist/composition.js"
+      },
+      "./composition-node": {
+        "types": "./node/composition.d.mts",
+        "import": "./node/composition.mjs"
+      },
+      "./check-cli": "./node/check-cli.mjs",
+      "./preview-sheets": {
+        "types": "./node/preview-sheets.d.mts",
+        "import": "./node/preview-sheets.mjs"
+      },
+      "./build-preview-cli": "./node/build-preview-cli.mjs"
+    },
+    "qualification": "Owner checks and final new-archive strict isolated qualification are recorded externally under the named delivery evidence; local source commit and full intended-ref audit required. Remote admission and consumer application/browser adoption are pending.",
+    "sharedCi": {
+      "revision": "1db73d1ddb342e348a2c9e8387f7bbc7ebb3225e",
+      "archiveSha256": "bd884d925b8a7339b15fa61a477cf652bb73d41cc68addf50a050ab6cb151611",
+      "sizeBytes": 68164,
+      "policySha256": "cdcda3c5d2968fe115e61627fca95ec744637de533750f1ee680c2a5ede49606",
+      "callerSha256": "b9fdfbf4bd61ed727abaef4fd9990b92714a6d2c1388feec600dc16337436b2c",
+      "actualRemoteAdmissionVerified": false,
+      "docsOnlyMetadataSkipped": false
+    },
+    "compatibility": "Additive public contracts, existing defaults and original media preserved. Prior source commits and exact archives retained for rollback.",
+    "producerInputs": {
+      "path": "build/repository-split/checks/2026-10-10-preview-scenes-qualified-delivery/producer-inputs/adoption.json",
+      "sha256": "ad4ab38cece0b9662f1d4ac87dd906d6fb68a4e9f3c6777ce56e616a70d5d8e7",
+      "adoptedArchives": [
+        {
+          "name": "@foss-earth/images",
+          "version": "0.1.0",
+          "sha256": "cca1df6798d4d5eccf347ac995e00816529b84bdda7b6914268ff2998341f1f8",
+          "bytes": 158207,
+          "archiveFilename": "foss-earth-images-0.1.0.tgz"
+        },
+        {
+          "name": "@foss-earth/preview-sheets",
+          "version": "0.1.0",
+          "sha256": "254d5e36d447abdd6924d1b020ebd2df6e609f879a88ef5eaf35d6e225e2dc82",
+          "bytes": 140727,
+          "archiveFilename": "foss-earth-preview-sheets-0.1.0.tgz"
+        }
+      ]
+    }
   }
 }

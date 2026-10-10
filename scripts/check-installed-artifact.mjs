@@ -32,7 +32,35 @@ for (const name of ["document", "window", "navigator", "fetch", "requestAnimatio
 const core = await import(resolvePublic("@foss-earth/scenes")), browser = await import(resolvePublic("@foss-earth/scenes/browser")), panel = await import(resolvePublic("@foss-earth/scenes/panel"));
 const viewerCore = await import(resolvePublic("@foss-earth/360")), preview = await import(resolvePublic("@foss-earth/preview-sheets/scene-extension"));
 const checker = await import(resolvePublic("@foss-earth/scenes/node")), previewDocument = await import(resolvePublic("@foss-earth/scenes/preview-sheets"));
+const composition = await import(resolvePublic("@foss-earth/scenes/composition")), compositionNode = await import(resolvePublic("@foss-earth/scenes/composition-node"));
+const compositionFixture = await import(pathToFileURL(path.join(consumer, "release-composition.fixture.mjs")));
 for (const name of ["document", "window", "navigator", "fetch", "requestAnimationFrame"]) delete globalThis[name];
+// These checks execute the actual installed public producer with unchanged public leaf owners.
+// The fixture calls the actual qualified Preview owner public export; no test adapter.
+assert.equal(core.composeSceneDocuments, composition.composeSceneDocuments);
+const pinnedFixture = compositionFixture.createCompositionFixture(), inputsBefore = [...pinnedFixture.inputs].map(([url, bytes]) => ({ url, reference: bytes, snapshot: Uint8Array.from(bytes) }));
+const composed = compositionNode.composeScenes(pinnedFixture.request, { inputs: pinnedFixture.inputs, extensions: pinnedFixture.extensions });
+compositionFixture.assertCompositionResult(composed, pinnedFixture);
+assert.deepEqual([...pinnedFixture.inputs.keys()], inputsBefore.map(input => input.url));
+for (const input of inputsBefore) { assert.equal(pinnedFixture.inputs.get(input.url), input.reference); assert.deepEqual(Uint8Array.from(input.reference), input.snapshot); }
+assert.equal(compositionNode.composeScenes(pinnedFixture.request, { inputs: new Map([...pinnedFixture.inputs].reverse()), extensions: pinnedFixture.extensions }).manifest, composed.manifest);
+const negativeComposition = (change, code) => {
+  const fixture = compositionFixture.createCompositionFixture(); change(fixture);
+  assert.throws(() => compositionNode.composeScenes(fixture.request, { inputs: fixture.inputs, extensions: fixture.extensions }), error => error.code === code);
+};
+negativeComposition(fixture => { fixture.request.links[0].to.id = "missing"; }, "reference");
+negativeComposition(fixture => { fixture.request.entityOrder.pop(); }, "reference");
+negativeComposition(fixture => { fixture.inputs.delete(fixture.sheetUrl); }, "missing-input");
+negativeComposition(fixture => { fixture.request.children[0].manifest.sha256 = "0".repeat(64); }, "drift");
+negativeComposition(fixture => { fixture.extensions = []; }, "owner-required");
+assert.equal(compositionNode.builtInSceneCompositionExtensions()[0].name, "foss-earth.preview-sheets");
+compositionFixture.assertCompositionResult(compositionNode.composeScenes(pinnedFixture.request, { inputs: pinnedFixture.inputs }), pinnedFixture);
+negativeComposition(fixture => { fixture.documents.get("east").assets[0].representations[0].extensions["foss-earth.preview-sheets"].y = 0; fixture.repin("east"); }, "media");
+for (const verificationLimits of [{ maxMemoryBytes: 1 }, { maxDecodedPixels: 1 }, { maxWorkPixels: 1 }]) assert.throws(() => compositionNode.composeScenes(pinnedFixture.request, { inputs: pinnedFixture.inputs, previewSheets: { verificationLimits } }), /budget/);
+const aliasFixture = compositionFixture.createCompositionFixture(); aliasFixture.documents.get("east").extensions["foss-earth.preview-sheets"].sheets[0].revision = "alias-r2"; aliasFixture.repin("east");
+assert.throws(() => compositionNode.composeScenes(aliasFixture.request, { inputs: aliasFixture.inputs }), /Sheet identity collision/);
+const aliasOutput = compositionNode.composeScenes(aliasFixture.request, { inputs: aliasFixture.inputs, previewSheets: { aliases: { east: { "shared-sheet": "east-sheet" } } } });
+assert.deepEqual(aliasOutput.document.assets[1].representations[0].extensions["foss-earth.preview-sheets"], { id: "east-sheet", x: 0, y: 8 });
 allowUiRuntime = true;
 const plugins = viewerCore.createBuiltInRepresentations(() => ({ tileMemoryBytes: 1024 * 1024, responseBytes: 1024 * 1024, requests: 2, waiting: 2, uploadOutstandingBytes: 1024 * 1024 }));
 const validation = { representations: plugins.map(plugin => plugin.hooks), validateImageAsset: viewerCore.validateViewerAsset, extensionHooks: [preview.createPreviewSheetsExtensionHook()], baseUrl: "https://host.example/tour/scene.json" };
@@ -91,7 +119,7 @@ const logController = browser.createSceneController({ examples: [], baseUrl: val
 const offLog = browser.connectSceneLog(logController, gameLog); assert.equal(await logController.load("missing.scene.json"), false); assert.match(gameLog.element.textContent, /could not be fetched: Synthetic refusal/);
 offLog(); offLog(); logController.destroy(); gameLog.destroy();
 const packageDirectory = path.dirname(path.dirname(fileURLToPath(resolvePublic("@foss-earth/scenes")))), manifest = JSON.parse(readFileSync(path.join(packageDirectory, "package.json"), "utf8"));
-for (const name of [".", "./browser", "./panel", "./node", "./preview-sheets"]) assert.ok(readFileSync(path.join(packageDirectory, manifest.exports[name].types), "utf8").length);
+for (const name of [".", "./browser", "./panel", "./node", "./composition", "./composition-node", "./preview-sheets"]) assert.ok(readFileSync(path.join(packageDirectory, manifest.exports[name].types), "utf8").length);
 const schema = JSON.parse(readFileSync(new URL(resolvePublic("@foss-earth/scenes/schema.json")), "utf8")); assert.equal(schema.$defs.panoramaAsset.properties.representations.contains, undefined); assert.match(readFileSync(new URL(resolvePublic("@foss-earth/scenes/panel.css")), "utf8"), /flex-wrap/);
 const { encodePng } = await import(resolvePublic("@foss-earth/images/node")), { CUBE_FACE_NAMES } = await import(resolvePublic("@foss-earth/cubemap/core"));
 const { createPreviewFixture } = await import(pathToFileURL(path.join(consumer, "preview-files.fixture.mjs")));
@@ -115,5 +143,7 @@ assert.throws(() => previewDocument.buildScenePreviewSheets(linked), /outside th
 const negative = spawnSync(process.execPath, ["--import", guard, outside], { cwd: consumer, env: childEnvironment, encoding: "utf8" }); assert.notEqual(negative.status, 0); assert.match(negative.stderr, /OUTSIDE_ISOLATED_WORKSPACE/);
 assert.equal(manifest.bin["foss-earth-check-scene"], manifest.exports["./check-cli"]); assert.equal(manifest.bin["foss-earth-build-preview-sheets"], manifest.exports["./build-preview-cli"]);
 const receipt = { package: manifest.name, version: manifest.version, artifact: path.basename(artifact), sha256: createHash("sha256").update(readFileSync(artifact)).digest("hex"), node: process.version, sourceRevision: manifest.fossEarthSplit.sourceRevision, installedEntries: [".", "./browser", "./panel", "./schema.json", "./panel.css", "./node", "./preview-sheets", "./check-cli", "./build-preview-cli"], pureImport: true, isolatedRealpathResolution: true, guardedCliNegativeControl: true, actual360Catalogue: true, optionalPreviewOwnerHook: true, preservedOrderAndUnsupportedProjection: true, injectedViewerWorldNavigation: true, viewerOwnedDetailObservations: true, prepublicationPreservation: true, ownerDisposal: true, explicitPanelDocumentUi: true, actualPublicMediaStoreSavedPresentation: true, actualPublicUiSceneLog: true, optionalUiInitializationGuard: true, publicPreviewDocumentFallback: true, manifestSymlinkRefusal: true, declarations: true, publication: "unaccepted local staging; no destination/remote admission asserted" };
+receipt.installedEntries.push("./composition", "./composition-node");
+receipt.checkedComposition = { actualInstalledProducer: true, fixtureOnlySheetOwner: true, deterministic: true, unchangedInputs: true, uniqueMediaFiles: composed.provenance.verifiedMediaFiles, sharedSheet: true, negativeCases: 5, outputSha256: composed.sha256 };
 writeFileSync(path.join(consumer, "receipt.json"), JSON.stringify(receipt, null, 2) + "\n"); process.stdout.write(JSON.stringify(receipt) + "\n");
 } finally { dom?.window.close(); hook.deregister(); }

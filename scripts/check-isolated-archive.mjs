@@ -64,10 +64,11 @@ copyFileSync(path.join(owner, "scripts", "runtime-guard.mjs"), guard);
 copyFileSync(path.join(owner, "scripts", "check-installed-artifact.mjs"), path.join(workspace, "installed-consumer.mjs"));
 copyFileSync(path.join(owner, "tests", "fixtures", "proposal-example.scene.json"), path.join(workspace, "proposal-example.scene.json"));
 copyFileSync(path.join(owner, "tests", "preview-files.fixture.mjs"), path.join(workspace, "preview-files.fixture.mjs"));
+copyFileSync(path.join(owner, "fixtures", "composition", "release-composition.fixture.mjs"), path.join(workspace, "release-composition.fixture.mjs"));
 run(process.execPath, [path.join(workspace, "installed-consumer.mjs"), workspace, pins["@foss-earth/scenes"].archive], "runtime.log");
 copyFileSync(path.join(owner, "tests", "consumer.ts"), path.join(workspace, "consumer.ts"));
 copyFileSync(path.join(owner, "fixtures", "360-consumer.ts"), path.join(workspace, "viewer-consumer.ts"));
-writeFileSync(path.join(workspace, "pure.ts"), 'import { validateScene, checkSceneFiles, composeSceneSchema } from "@foss-earth/scenes"; void [validateScene,checkSceneFiles,composeSceneSchema];\n');
+writeFileSync(path.join(workspace, "pure.ts"), 'import { validateScene, checkSceneFiles, composeSceneSchema } from "@foss-earth/scenes"; import { composeSceneDocuments, type SceneCompositionOptions, type SceneCompositionRequest } from "@foss-earth/scenes/composition"; declare const request: SceneCompositionRequest; declare const options: SceneCompositionOptions; void composeSceneDocuments(request,options).sha256; void [validateScene,checkSceneFiles,composeSceneSchema];\n');
 const typeTrace = trace => {
   let resolved = 0;
   for (const match of trace.matchAll(/successfully resolved to '([^']+)'/g)) { resolved += 1; assert.ok(realpathSync(match[1]).startsWith(realpathSync(workspace) + path.sep), "OUTSIDE_ISOLATED_DECLARATIONS: " + match[1]); }
