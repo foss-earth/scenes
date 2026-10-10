@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "owner": "foss-earth/scenes",
   "preparedAtUtc": "2026-10-09T22-26-57Z",
-  "status": "Current source seal; individual retained check receipts define qualification. Installed archive and application/remote adoption separately recorded in external release descriptor.",
+  "status": "Current portable source seal; external exact delivery describes implementation/browser/ref qualification and outstanding remote gates.",
   "sourceRevision": "90e23b3ee96f53ec5900afc5991a21fffa58649d",
   "priorSourceReceipt": "build/source-only/restart-2026-10-09T22-23-20Z/before/SOURCE_RECEIPT.json",
   "sourceManifestPath": "build/source-only/restart-2026-10-09T22-23-20Z/source-manifest.json",
@@ -441,11 +441,12 @@
     "sourceOriginalHashesPreserved": true,
     "packageScopeUnchanged": true
   },
-  "verifiedAtUtc": "2026-10-09T23:35:56.670238+00:00",
+  "verifiedAtUtc": "2026-10-10T03:25:51.207748+00:00",
   "currentSourceManifest": {
-    "path": "/Users/felg/gh/foss-earth/foss-earth.github.io/build/repository-split/checks/2026-10-09-granted-verification/scenes-sealed-source-files.json",
-    "sha256": "499a002871334203b0afb62cbb6c0fea38b241c8d54d7c846550150de51d5f58",
-    "fileCount": 74
+    "evidenceId": "scenes-current-source-files.json",
+    "sha256": "23c2c44f858028ed1c2e3c7c5ca08d217907e0191f00b6660885ed2f65770c0c",
+    "fileCount": 74,
+    "scope": "Private retained documentary evidence, not an artifact path or public URL"
   },
   "currentSharedCi": {
     "revision": "1db73d1ddb342e348a2c9e8387f7bbc7ebb3225e",
@@ -453,44 +454,50 @@
     "artifactSha256": "bd884d925b8a7339b15fa61a477cf652bb73d41cc68addf50a050ab6cb151611",
     "descriptorSha256": "d60ee5067185a768f0890da2ed87d82dbfa08f28282e4d05a35e823c70307122",
     "callerSha256": "b9fdfbf4bd61ed727abaef4fd9990b92714a6d2c1388feec600dc16337436b2c",
-    "fullIntendedRefs": "external release descriptor; mandatory complete nonempty audit after this commit",
+    "fullIntendedRefs": "complete external delivery audit after this commit",
     "remoteAdmissionVerifiedByOwner": false
   },
   "currentChecks": [
     {
-      "receipt": "/Users/felg/gh/foss-earth/foss-earth.github.io/build/repository-split/checks/2026-10-09-granted-verification/scenes-causal-lint.json",
+      "evidenceId": "scenes-causal-lint.json",
       "sha256": "f567cacbc15376313fae7d2d8645bf02afcba9677ac0f65ee4977a10c8470898",
       "exitCode": 0
     },
     {
-      "receipt": "/Users/felg/gh/foss-earth/foss-earth.github.io/build/repository-split/checks/2026-10-09-granted-verification/scenes-causal-log-fixture.json",
+      "evidenceId": "scenes-causal-log-fixture.json",
       "sha256": "279c4f2a803274c974972dec180b0dd0a34d6d328412cbd27c8678bb0212ef1d",
       "exitCode": 0
     },
     {
-      "receipt": "/Users/felg/gh/foss-earth/foss-earth.github.io/build/repository-split/checks/2026-10-09-granted-verification/scenes-causal-type-build.json",
+      "evidenceId": "scenes-causal-type-build.json",
       "sha256": "730eb845f965e4c33091965d93483e4a3fe72a9be5cd7787a6cb329b592e6d17",
       "exitCode": 0
     },
     {
-      "receipt": "/Users/felg/gh/foss-earth/foss-earth.github.io/build/repository-split/checks/2026-10-09-granted-verification/scenes-ci-install.json",
+      "evidenceId": "scenes-ci-install.json",
       "sha256": "4081c089825d8270816ce1c34b2b85e7827087e9c8a8cc8d9f5b9650aa5b3b68",
       "exitCode": 0
     },
     {
-      "receipt": "/Users/felg/gh/foss-earth/foss-earth.github.io/build/repository-split/checks/2026-10-09-granted-verification/scenes-current-inputs-install.json",
+      "evidenceId": "scenes-current-inputs-install.json",
       "sha256": "938c681a715376c02dcc030a54007f2de1b022a8e4bdf061cda3e4d5fdaf670c",
       "exitCode": 0
     },
     {
-      "receipt": "/Users/felg/gh/foss-earth/foss-earth.github.io/build/repository-split/checks/2026-10-09-granted-verification/scenes-final-ci.json",
+      "evidenceId": "scenes-final-ci.json",
       "sha256": "d2a0b1d071e42dafc8e22bbf409f5d3345fbad354246c73681a046924c60131c",
       "exitCode": 1
     },
     {
-      "receipt": "/Users/felg/gh/foss-earth/foss-earth.github.io/build/repository-split/checks/2026-10-09-granted-verification/scenes-finished-ci.json",
+      "evidenceId": "scenes-finished-ci.json",
       "sha256": "8ff841691b50b96af77049d629e59b6b9b1b09b0f5d75539b338b4001b2d084a",
       "exitCode": 0
     }
-  ]
+  ],
+  "publicationEvidence": {
+    "scope": "Portable public provenance for the prior qualified local Scenes delivery; execution files remain private retained evidence, identified by basename and their unchanged SHA256 seals. Evidence IDs are not package-relative files or public download URLs.",
+    "lastQualifiedSource": "2ac022d043901e4ad6d3a4cda86f6dc2a5f90f3c",
+    "lastQualifiedArchiveSha256": "95e441e5f166c8eb6c1778c88433646f21774849573807dd467fa7ac377b48be",
+    "currentPreparation": "Metadata-only portable publication candidate, uncommitted/unpacked/unverified. Prior exact archive/descriptor remains qualified and unchanged."
+  }
 }
