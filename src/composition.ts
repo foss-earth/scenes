@@ -1,7 +1,7 @@
 /** Checked, deterministic preparation of one v1 scene. No transport or runtime is created. */
 import { isRecord, type ImageRepresentation, type RepresentationHooks } from "@foss-earth/images";
 import { checkSceneFiles, type SceneExtensionFile, type SceneRepresentationFileHook } from "./checkSceneFiles.js";
-import { SCENE_FORMAT, SCENE_FORMAT_VERSION, type SceneDocument, type SceneDiagnostic, type LinkRecord, type OverviewRecord, type ValidatedScene } from "./format.js";
+import { SCENE_FORMAT, SCENE_FORMAT_VERSION, type SceneDocument, type SceneDiagnostic, type LinkRecord, type GroupRecord, type OverviewRecord, type ValidatedScene } from "./format.js";
 import { validateScene, type SceneExtensionHook, type ValidateSceneOptions } from "./validateScene.js";
 
 export interface SceneArtifactPin { url: string; sha256: string; sizeBytes: number }
@@ -19,8 +19,20 @@ export interface SceneCompositionLink {
   from: SceneChildReference;
   to: SceneChildReference;
   /** Everything except target is explicitly authored by the consumer. */
-  link: Omit<LinkRecord, "target">;
+  link: Omit<LinkRecord, "target" | "externalDestination">;
+  /** Consume this existing declared external link exactly once; retain its metadata. */
+  consume?: string;
+  /** Default append; consumed links keep their existing position without this edit. */
+  insert?: { before: string } | { after: string } | { index: number };
 }
+export interface SceneCompositionGroupReplacement {
+  consume: readonly SceneChildReference[];
+  group: Omit<GroupRecord, "members">;
+  members: readonly SceneChildReference[];
+  /** Required for extensions; their owner receives this explicit child context. */
+  contextChild?: string;
+}
+export type SceneCompositionGroupReference = SceneChildReference | { composed: string };
 export interface SceneCompositionRequest {
   schemaVersion: 1;
   id: string;
@@ -30,7 +42,8 @@ export interface SceneCompositionRequest {
   /** A complete permutation: no implicit geographic ordering or omitted stops. */
   entityOrder: readonly SceneChildReference[];
   /** When absent, preserve child order and each child's authored group order. */
-  groupOrder?: readonly SceneChildReference[];
+  groupOrder?: readonly SceneCompositionGroupReference[];
+  groupReplacements?: readonly SceneCompositionGroupReplacement[];
   initialPanorama?: SceneChildReference;
   /** Never inferred from either child's overview. */
   overview?: OverviewRecord;
@@ -129,6 +142,8 @@ export interface SceneCompositionResult {
     requestSha256: string;
     children: readonly SceneCompositionChild[];
     aliases: readonly { child: string; kind: SceneCompositionIdKind; originalId: string; outputId: string }[];
+    groupReplacements: readonly { outputId: string; consumed: readonly SceneChildReference[]; members: readonly SceneChildReference[] }[];
+    linkMappings: readonly { child: string; entityId: string; linkId: string; to: SceneChildReference; consumed: boolean }[];
     assets: readonly { child: string; originalId: string; outputId: string; mediaId: string; mediaRevision: string; mediaIndexSha256: string }[];
     /** Unique referenced files; a shared immutable sheet/file is verified once. */
     files: readonly (SceneArtifactPin & { children: readonly string[] })[];
@@ -196,7 +211,7 @@ export function composeSceneDocuments(input: SceneCompositionRequest, options: S
   cancel();
   const request = clone(input, "$request") as unknown as SceneCompositionRequest;
   bounded(utf8(JSON.stringify(request)).byteLength, "requestBytes", "$request");
-  keys(request as unknown as ObjectRecord, ["schemaVersion", "id", "revision", "title", "children", "entityOrder", "groupOrder", "initialPanorama", "overview", "links"], "$request");
+  keys(request as unknown as ObjectRecord, ["schemaVersion", "id", "revision", "title", "children", "entityOrder", "groupOrder", "initialPanorama", "overview", "links", "groupReplacements"], "$request");
   if (request.schemaVersion !== 1) fail("invalid-request", "$request.schemaVersion", "only composition request v1 is supported");
   identifier(request.id, "$request.id"); text(request.revision, "$request.revision"); text(request.title, "$request.title");
   const requestedChildren = asArray(request.children, "$request.children");
@@ -212,6 +227,19 @@ export function composeSceneDocuments(input: SceneCompositionRequest, options: S
   for (const owner of options.extensions ?? []) {
     if (!/^[a-z0-9-]+(\.[A-Za-z0-9_-]+)+$/.test(owner.name) || extensions.has(owner.name) || owner.validation.name !== owner.name || typeof owner.composeDocument !== "function" || typeof owner.rewrite !== "function") fail("invalid-request", "$.extensions", "unique named owner validation/compose/rewrite hooks are required");
     extensions.set(owner.name, owner);
+  }
+  const inspectGroupExtensionsLater: { group: ObjectRecord; path: string }[] = [];
+  const replacementRequests = asArray(request.groupReplacements ?? [], "$request.groupReplacements");
+  bounded(replacementRequests.length, "groups", "$request.groupReplacements");
+  let consumedInputGroups = 0;
+  for (const [at, value] of replacementRequests.entries()) {
+    const path = `$request.groupReplacements[${at}]`, record = asRecord(value, path);
+    keys(record, ["consume", "group", "members", "contextChild"], path);
+    const consume = asArray(record.consume, `${path}.consume`);
+    if (!consume.length) fail("invalid-request", `${path}.consume`, "must explicitly consume at least one named group");
+    bounded(consume.length, "groups", `${path}.consume`); consumedInputGroups += consume.length;
+    const group = asRecord(record.group, `${path}.group`); keys(group, ["id", "title", "extensions"], `${path}.group`);
+    identifier(group.id, `${path}.group.id`); text(group.title, `${path}.group.title`); inspectGroupExtensionsLater.push({ group, path });
   }
   const verified = new Map<string, { pin: SceneArtifactPin; bytes: Uint8Array }>();
   let verifiedInputBytes = 0;
@@ -252,6 +280,7 @@ export function composeSceneDocuments(input: SceneCompositionRequest, options: S
       neededExtensions.add(name);
     }
   };
+  for (const { group, path } of inspectGroupExtensionsLater) inspectExtensions(group, `${path}.group`);
   const sceneOptions = (baseUrl: string): ValidateSceneOptions => ({
     baseUrl, representations: [...owners.values()], validateImageAsset: options.validateImageAsset,
     extensionHooks: [...extensions.values()].map(owner => owner.validation),
@@ -263,7 +292,7 @@ export function composeSceneDocuments(input: SceneCompositionRequest, options: S
     // Optional runtime fallback is useful for viewing, but must not discard authored media in a build.
     const discarded = result.scene.warnings.filter(warning => warning.path.includes(".extensions.") || warning.path.includes(".representations") || warning.path.endsWith(".assetId"));
     if (discarded.length) fail("invalid-scene", path, discarded.map(error => `${error.path}: ${error.message}`).join("; "));
-    for (const entity of result.scene.panoramas.values()) for (const link of entity.links) if (!result.scene.panoramas.has(link.target)) fail("reference", path, `link ${entity.id}/${link.id} targets an unsupported entity`);
+    for (const entity of result.scene.panoramas.values()) for (const link of entity.links) if (!link.externalDestination && !result.scene.panoramas.has(link.target)) fail("reference", path, `link ${entity.id}/${link.id} targets an unsupported entity`);
     return result.scene;
   };
   const children = new Map<string, ChildState>();
@@ -294,7 +323,11 @@ export function composeSceneDocuments(input: SceneCompositionRequest, options: S
       localMedia.set(pin.url, pin);
       read(pin, "fileBytes", filePath); mediaPins.set(pin.url, pin); bounded(mediaPins.size, "files", filePath);
     }
-    for (const name of ["entities", "assets", "groups"] as const) { totals[name] += asArray(document[name] ?? [], `${path}.document.${name}`).length; bounded(totals[name], name, path); }
+    for (const name of ["entities", "assets", "groups"] as const) {
+      totals[name] += asArray(document[name] ?? [], `${path}.document.${name}`).length;
+      if (name === "groups") { if (totals.groups > limits.groups + consumedInputGroups) fail("limit", path, "exceeds bounded input groups plus explicit consumption"); }
+      else bounded(totals[name], name, path);
+    }
     inspectExtensions(document, `${path}.document`);
     for (const [at, asset] of asArray(document.assets, `${path}.document.assets`).entries()) {
       const assetPath = `${path}.document.assets[${at}]`, assetRecord = asRecord(asset, assetPath);
@@ -319,6 +352,36 @@ export function composeSceneDocuments(input: SceneCompositionRequest, options: S
     const context: SceneCompositionChildContext = { key, baseUrl: media.baseUrl, resolveId(kind, id) { const output = ids[kind].get(id); return output ?? fail("reference", `${path}.${kind}`, `unknown ${kind} ID ${id}`); } };
     children.set(key, { pin: { key, manifest, media, ...(record.aliases === undefined ? {} : { aliases: record.aliases as SceneCompositionChild["aliases"] }) }, document, validated, media: localMedia, ids, context });
   }
+  const consumedGroups = new Map<string, string>();
+  const replacementIds = new Set<string>();
+  const childReferenceKey = (value: unknown, path: string): { key: string; child: ChildState; id: string } => {
+    const record = asRecord(value, path); keys(record, ["child", "id"], path);
+    const child = children.get(identifier(record.child, `${path}.child`)) ?? fail("reference", path, "unknown child");
+    const id = identifier(record.id, `${path}.id`); return { key: `${child.pin.key}/${id}`, child, id };
+  };
+  for (const [at, value] of replacementRequests.entries()) {
+    const path = `$request.groupReplacements[${at}]`, record = asRecord(value, path), group = asRecord(record.group, `${path}.group`);
+    const outputId = identifier(group.id, `${path}.group.id`);
+    if (replacementIds.has(outputId)) fail("collision", `${path}.group.id`, "repeats a composed group ID"); replacementIds.add(outputId);
+    const sourceMembers = new Set<string>();
+    for (const [index, ref] of asArray(record.consume, `${path}.consume`).entries()) {
+      const source = childReferenceKey(ref, `${path}.consume[${index}]`);
+      const original = source.child.validated.groups.find(entry => entry.id === source.id);
+      if (!original) fail("reference", `${path}.consume[${index}]`, "names no child group");
+      if (consumedGroups.has(source.key)) fail("collision", `${path}.consume[${index}]`, "a child group can be consumed only once");
+      consumedGroups.set(source.key, outputId);
+      for (const id of original.members) sourceMembers.add(`${source.child.pin.key}/${id}`);
+    }
+    const members = new Set<string>();
+    for (const [index, ref] of asArray(record.members, `${path}.members`).entries()) {
+      const member = childReferenceKey(ref, `${path}.members[${index}]`);
+      if (!member.child.validated.entityOrder.includes(member.id)) fail("reference", `${path}.members[${index}]`, "names no child entity");
+      if (members.has(member.key)) fail("collision", `${path}.members[${index}]`, "repeats a member"); members.add(member.key);
+    }
+    if (members.size !== sourceMembers.size || [...sourceMembers].some(key => !members.has(key))) fail("reference", `${path}.members`, "must preserve the complete consumed member union exactly once in authored order");
+    if (group.extensions !== undefined && record.contextChild === undefined) fail("owner-required", `${path}.contextChild`, "author an explicit child context for group extension owners");
+    if (record.contextChild !== undefined && !children.has(identifier(record.contextChild, `${path}.contextChild`))) fail("reference", `${path}.contextChild`, "unknown child context");
+  }
   const aliases: SceneCompositionResult["provenance"]["aliases"][number][] = [];
   for (const kind of ["assets", "entities", "groups"] as const) {
     const occupied = new Map<string, string>();
@@ -330,7 +393,11 @@ export function composeSceneDocuments(input: SceneCompositionRequest, options: S
       for (const originalId of Object.keys(configured)) if (!records.some(record => record.id === originalId)) fail("reference", `$children.${child.pin.key}.aliases.${kind}.${originalId}`, "alias names no child record");
       for (const record of records) {
         const originalId = record.id as string;
-        const outputId = own(configured, originalId) ? identifier(configured[originalId], `$children.${child.pin.key}.aliases.${kind}.${originalId}`) : originalId;
+        const replacement = kind === "groups" ? consumedGroups.get(`${child.pin.key}/${originalId}`) : undefined;
+        const outputId = replacement ?? (own(configured, originalId) ? identifier(configured[originalId], `$children.${child.pin.key}.aliases.${kind}.${originalId}`) : originalId);
+        if (replacement && own(configured, originalId) && configured[originalId] !== replacement) fail("collision", `$children.${child.pin.key}.aliases.${kind}.${originalId}`, "alias contradicts explicit group replacement");
+        if (replacement) { child.ids[kind].set(originalId, outputId); aliases.push({ child: child.pin.key, kind, originalId, outputId }); continue; }
+        if (kind === "groups" && replacementIds.has(outputId)) fail("collision", `$children.${child.pin.key}.groups.${originalId}`, "composed group ID collides with an unconsumed child group");
         if (kind === "entities" && record.type !== "panorama" && outputId !== originalId) fail("owner-required", `$children.${child.pin.key}.entities.${originalId}`, "an inert unknown entity cannot be aliased without its reference owner");
         if (occupied.has(outputId)) fail("collision", `$children.${child.pin.key}.${kind}.${originalId}`, `output ID ${outputId} collides with ${occupied.get(outputId)}; author explicit reversible aliases`);
         occupied.set(outputId, `${child.pin.key}/${originalId}`); child.ids[kind].set(originalId, outputId);
@@ -338,10 +405,11 @@ export function composeSceneDocuments(input: SceneCompositionRequest, options: S
       }
     }
   }
-  const crossLinks = asArray(request.links ?? [], "$request.links"); bounded(totals.links + crossLinks.length, "links", "$request.links");
+  const crossLinks = asArray(request.links ?? [], "$request.links"); bounded(crossLinks.length, "links", "$request.links");
   for (const [at, link] of crossLinks.entries()) {
-    const record = asRecord(link, `$request.links[${at}]`); keys(record, ["from", "to", "link"], `$request.links[${at}]`);
+    const record = asRecord(link, `$request.links[${at}]`); keys(record, ["from", "to", "link", "consume", "insert"], `$request.links[${at}]`);
     const linkRecord = asRecord(record.link, `$request.links[${at}].link`);
+    if (own(linkRecord, "externalDestination")) fail("invalid-request", `$request.links[${at}].link.externalDestination`, "mapped cross-child links are local in the composed scene");
     if (own(linkRecord, "target")) fail("invalid-request", `$request.links[${at}].link.target`, "use the explicit to reference");
     inspectExtensions(linkRecord, `$request.links[${at}].link`);
   }
@@ -389,6 +457,12 @@ export function composeSceneDocuments(input: SceneCompositionRequest, options: S
   };
   for (const child of children.values()) verifyFiles(child.validated, child.media, child.pin.key);
   const assets: ObjectRecord[] = [], entityRecords = new Map<string, ObjectRecord>(), groupRecords = new Map<string, ObjectRecord>();
+  const externalDestinations = new Map<string, ObjectRecord>();
+  for (const child of children.values()) for (const value of asArray(child.document.externalDestinations ?? [], "$child.externalDestinations")) {
+    const record = clone(value, "$composed.externalDestination"), prior = externalDestinations.get(record.id as string);
+    if (prior && JSON.stringify(prior) !== JSON.stringify(record)) fail("collision", "$child.externalDestinations", "conflicting declared external destination IDs");
+    externalDestinations.set(record.id as string, record);
+  }
   const assetProvenance: SceneCompositionResult["provenance"]["assets"][number][] = [];
   for (const child of children.values()) {
     for (const value of asArray(child.document.assets, "$child.assets")) {
@@ -414,14 +488,16 @@ export function composeSceneDocuments(input: SceneCompositionRequest, options: S
         // Materialize only the inherited envelope style; child pose/unknown height stay authored.
         if (child.document.markerStyle !== undefined) marker.style = { ...asRecord(child.document.markerStyle, "$child.markerStyle"), ...(marker.style === undefined ? {} : asRecord(marker.style, "$child.marker.style")) };
         entity.links = asArray(entity.links ?? [], "$child.links").map(value => {
-          const link = clone(value, "$composed.link"); link.target = child.context.resolveId("entities", link.target as string);
+          const link = clone(value, "$composed.link"); if (!link.externalDestination) link.target = child.context.resolveId("entities", link.target as string);
           rewriteExtensions(link, "link", child, `$children.${child.pin.key}.entities.${originalId}.links.${link.id}`); return link;
         });
       }
       rewriteExtensions(entity, "entity", child, `$children.${child.pin.key}.entities.${originalId}`); entityRecords.set(entity.id as string, entity);
     }
     for (const value of asArray(child.document.groups ?? [], "$child.groups")) {
-      const group = clone(value, "$composed.group"), originalId = group.id as string; group.id = child.context.resolveId("groups", originalId);
+      const group = clone(value, "$composed.group"), originalId = group.id as string;
+      if (consumedGroups.has(`${child.pin.key}/${originalId}`)) continue;
+      group.id = child.context.resolveId("groups", originalId);
       group.members = asArray(group.members, "$child.group.members").map(id => child.context.resolveId("entities", id as string));
       rewriteExtensions(group, "group", child, `$children.${child.pin.key}.groups.${originalId}`); groupRecords.set(group.id as string, group);
     }
@@ -433,22 +509,74 @@ export function composeSceneDocuments(input: SceneCompositionRequest, options: S
     if (panorama && !child.validated.panoramas.has(record.id as string)) fail("reference", path, "must refer to a supported panorama");
     return { id, child };
   };
+  const linkMappings: SceneCompositionResult["provenance"]["linkMappings"][number][] = [];
+  const editedLinks = new Set<string>();
   for (const [at, value] of crossLinks.entries()) {
-    const record = asRecord(value, `$request.links[${at}]`), from = reference(record.from, "entities", `$request.links[${at}].from`, true), to = reference(record.to, "entities", `$request.links[${at}].to`, true);
-    const link = clone(record.link, `$request.links[${at}].link`); link.target = to.id;
+    const path = `$request.links[${at}]`, record = asRecord(value, path), from = reference(record.from, "entities", `${path}.from`, true), to = reference(record.to, "entities", `${path}.to`, true);
+    const link = clone(record.link, `${path}.link`), id = identifier(link.id, `${path}.link.id`);
     const entity = entityRecords.get(from.id)!, links = asArray(entity.links, "$composed.links");
-    if (links.some(existing => asRecord(existing, "$composed.link").id === link.id)) fail("collision", `$request.links[${at}].link.id`, "repeats a link ID in the source entity");
-    rewriteExtensions(link, "link", from.child, `$request.links[${at}].link`); links.push(link);
+    const editKey = `${from.id}/${id}`; if (editedLinks.has(editKey)) fail("collision", path, "contradictory/repeated link edits"); editedLinks.add(editKey);
+    let position = links.length;
+    if (record.consume !== undefined) {
+      const consume = identifier(record.consume, `${path}.consume`);
+      if (consume !== id) fail("collision", `${path}.consume`, "must retain the consumed link identity");
+      const sourceId = asRecord(record.from, `${path}.from`).id as string;
+      const raw = from.child.validated.panoramas.get(sourceId)!.links.find(entry => entry.id === consume);
+      if (!raw?.externalDestination) fail("reference", `${path}.consume`, "must name an existing declared external link");
+      const destination = from.child.validated.externalDestinations?.get(raw.externalDestination);
+      if (!destination || destination.sceneId !== to.child.pin.manifest.id || raw.target !== asRecord(record.to, `${path}.to`).id) fail("reference", `${path}.to`, "must map the original declared destination and named panorama");
+      const { target: _target, externalDestination: _external, ...metadata } = raw; void _target; void _external;
+      if (JSON.stringify(canonical(metadata, path)) !== JSON.stringify(canonical(link, path))) fail("drift", `${path}.link`, "must preserve the consumed link label/direction/arrival/extensions");
+      position = links.findIndex(entry => asRecord(entry, path).id === consume);
+      if (position < 0) fail("reference", `${path}.consume`, "consumed link is no longer present"); links.splice(position, 1);
+    }
+    if (links.some(existing => asRecord(existing, path).id === id)) fail("collision", `${path}.link.id`, "repeats a link ID in the source entity");
+    if (record.insert !== undefined) {
+      const insertion = asRecord(record.insert, `${path}.insert`);
+      keys(insertion, ["before", "after", "index"], `${path}.insert`);
+      if (Object.keys(insertion).length !== 1) fail("invalid-request", `${path}.insert`, "author exactly one insertion mode");
+      if (insertion.index !== undefined) {
+        if (!Number.isSafeInteger(insertion.index) || (insertion.index as number) < 0 || (insertion.index as number) > links.length) fail("reference", `${path}.insert.index`, "must be a bounded insertion position"); position = insertion.index as number;
+      } else {
+        const key = insertion.before !== undefined ? "before" : "after", anchor = identifier(insertion[key], `${path}.insert.${key}`);
+        const matches = links.flatMap((entry, index) => asRecord(entry, path).id === anchor ? [index] : []);
+        if (matches.length !== 1) fail("reference", `${path}.insert.${key}`, "anchor is missing or ambiguous"); position = matches[0]! + (key === "after" ? 1 : 0);
+      }
+    }
+    link.target = to.id; rewriteExtensions(link, "link", from.child, `${path}.link`); links.splice(position, 0, link);
+    linkMappings.push({ child: from.child.pin.key, entityId: asRecord(record.from, path).id as string, linkId: id, to: record.to as SceneChildReference, consumed: record.consume !== undefined });
   }
+  bounded([...entityRecords.values()].reduce((sum, entity) => sum + (Array.isArray(entity.links) ? entity.links.length : 0), 0), "links", "$composed.links");
+  const groupReplacements: SceneCompositionResult["provenance"]["groupReplacements"][number][] = [];
+  for (const [at, value] of replacementRequests.entries()) {
+    const path = `$request.groupReplacements[${at}]`, record = asRecord(value, path), group = clone(record.group, `${path}.group`);
+    group.members = asArray(record.members, `${path}.members`).map((value, index) => reference(value, "entities", `${path}.members[${index}]`).id);
+    const first = childReferenceKey(asArray(record.consume, path)[0], path).child;
+    const context = record.contextChild === undefined ? first : children.get(record.contextChild as string)!;
+    rewriteExtensions(group, "group", context, `${path}.group`); groupRecords.set(group.id as string, group);
+    groupReplacements.push({ outputId: group.id as string, consumed: record.consume as SceneChildReference[], members: record.members as SceneChildReference[] });
+  }
+  bounded(groupRecords.size, "groups", "$composed.groups");
   const ordered = (value: unknown, kind: "entities" | "groups", records: Map<string, ObjectRecord>, path: string): ObjectRecord[] => {
     const order = asArray(value, path); bounded(order.length, kind, path); const seen = new Set<string>();
-    const result = order.map((entry, index) => { const { id } = reference(entry, kind, `${path}[${index}]`); if (seen.has(id)) fail("collision", `${path}[${index}]`, "repeats an ordered record"); seen.add(id); return records.get(id)!; });
+    const result = order.map((entry, index) => { const location = `${path}[${index}]`;
+      const record = asRecord(entry, location);
+      let id: string;
+      if (kind === "groups" && own(record, "composed")) { keys(record, ["composed"], location); id = identifier(record.composed, `${location}.composed`); if (!replacementIds.has(id)) fail("reference", location, "unknown composed group"); }
+      else { if (kind === "groups") { const ref = childReferenceKey(entry, location); if (consumedGroups.has(ref.key)) fail("reference", location, "use the explicit composed group reference for consumed groups"); } id = reference(entry, kind, location).id; }
+      if (!records.has(id)) fail("reference", location, "ordered record does not exist"); if (seen.has(id)) fail("collision", `${path}[${index}]`, "repeats an ordered record"); seen.add(id); return records.get(id)!; });
     if (seen.size !== records.size) fail("reference", path, "must include every child record exactly once");
     return result;
   };
-  const defaultGroups = [...children.values()].flatMap(child => [...child.ids.groups.keys()].map(id => ({ child: child.pin.key, id })));
+  const seenDefaultGroups = new Set<string>();
+  const defaultGroups = [...children.values()].flatMap(child => [...child.ids.groups.keys()].flatMap(id => {
+    const replacement = consumedGroups.get(`${child.pin.key}/${id}`);
+    if (!replacement) return [{ child: child.pin.key, id } as SceneCompositionGroupReference];
+    if (seenDefaultGroups.has(replacement)) return []; seenDefaultGroups.add(replacement); return [{ composed: replacement } as SceneCompositionGroupReference];
+  }));
   const requiredExtensions = [...new Set([...children.values()].flatMap(child => asArray(child.document.requiredExtensions ?? [], "$child.requiredExtensions") as string[]))].sort();
   const document: ObjectRecord = { format: SCENE_FORMAT, version: SCENE_FORMAT_VERSION, id: request.id, revision: request.revision, title: request.title,
+    ...(externalDestinations.size ? { externalDestinations: [...externalDestinations.values()] } : {}),
     assets, entities: ordered(request.entityOrder, "entities", entityRecords, "$request.entityOrder"), groups: ordered(request.groupOrder ?? defaultGroups, "groups", groupRecords, "$request.groupOrder"),
     ...(request.initialPanorama === undefined ? {} : { initialPanorama: reference(request.initialPanorama, "entities", "$request.initialPanorama", true).id }),
     ...(request.overview === undefined ? {} : { overview: request.overview }),
@@ -460,7 +588,7 @@ export function composeSceneDocuments(input: SceneCompositionRequest, options: S
   const validated = validate(finalDocument, "https://composition.invalid/parent/scene.json", "$composed");
   verifyFiles(validated, mediaPins, "$composed"); cancel();
   return { document: finalDocument as unknown as SceneDocument, manifest, sha256: hash(bytes, "$composed"), sizeBytes: bytes.byteLength,
-    provenance: { requestSha256: hash(utf8(JSON.stringify(request)), "$request"), children: [...children.values()].map(child => child.pin), aliases, assets: assetProvenance,
+    provenance: { requestSha256: hash(utf8(JSON.stringify(request)), "$request"), children: [...children.values()].map(child => child.pin), aliases, groupReplacements, linkMappings, assets: assetProvenance,
       files: [...fileChildren.keys()].sort().map(url => ({ ...mediaPins.get(url)!, children: [...fileChildren.get(url)!].sort() })),
       verifiedMediaFiles: mediaPins.size, verifiedInputBytes, declaredFileReferences: fileReferences,
       warnings: [...children.values()].flatMap(child => child.validated.warnings).concat(validated.warnings) } };

@@ -1,5 +1,5 @@
 import type { ImageAsset, ImageAttribution, ImagePose, Mat3, Vec3 } from "@foss-earth/images";
-import type { OverviewRecord, ResolvedPanorama, SceneDiagnostic, ValidatedScene, ViewRecord } from "./format.js";
+import type { ExternalDestinationRecord, LinkRecord, OverviewRecord, ResolvedPanorama, SceneDiagnostic, ValidatedScene, ViewRecord } from "./format.js";
 import type { SceneInput, ResolveSceneInputOptions } from "./manifest.js";
 import type { SceneHistoryAdapter } from "./history.js";
 
@@ -64,7 +64,7 @@ export interface SceneEntryStatus {
   /** Observations supplied by the image/viewer owner; no local format/budget calculations. */
   previewDetail: { representation: string; faceTexels: number; limitation: string | null } | null;
   images: readonly SceneImageStatus[];
-  links: readonly { id: string; label: string; target: string; enabled: boolean; placed: boolean }[];
+  links: readonly { id: string; label: string; target: string; externalDestination?: string; enabled: boolean; placed: boolean }[];
 }
 export interface SceneImageStatus {
   id: string; role: "preview" | "immersion"; projection: string;
@@ -93,8 +93,16 @@ export interface SceneHandle {
   whenSettled(): Promise<void>;
   dispose(): void;
 }
+export interface SceneExternalNavigationPorts {
+  /** The host maps its declared scene/route and named panorama. Scenes fetches nothing. */
+  navigate(input: { destination: ExternalDestinationRecord; panoramaId: string;
+    source: { sceneId: string; revision: string; panoramaId: string };
+    link: LinkRecord; signal: AbortSignal }): Promise<SceneActionResult>;
+}
 export interface LoadSceneOptions extends ResolveSceneInputOptions {
   viewer: SceneViewerPorts; world: SceneWorldPorts;
+  /** Absent means external links remain listed disabled; local-only hosts stay compatible. */
+  externalNavigation?: SceneExternalNavigationPorts;
   /** The current viewer setting, supplied explicitly; no hidden application default. */
   markerRadiusMeters(): number;
   history?: SceneHistoryAdapter;

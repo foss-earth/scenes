@@ -88,4 +88,68 @@ describe("checked public scene composition", () => {
     }
   });
 
+  const crossing = () => {
+    const f = createCompositionFixture(), west = f.documents.get("west"), east = f.documents.get("east");
+    west.externalDestinations = [{ id: "east-route", sceneId: east.id, routeId: "east-tour" }];
+    const metadata = { id: "next", label: "Authored next", direction: { headingDeg: 33, pitchDeg: 2 }, arrivalView: { headingDeg: 8, pitchDeg: -4, verticalFovDeg: 70 } };
+    west.entities[0].links.push({ ...metadata, target: "b-1", externalDestination: "east-route" });
+    f.repin("west");
+    f.request.links = [{ from: { child: "west", id: "a-1" }, to: { child: "east", id: "b-1" }, consume: "next", link: metadata, insert: { before: "local" } }];
+    return f;
+  };
+  it("consumes a declared crossing once, preserves metadata and puts next before previous", () => {
+    const f = crossing(), before = [...f.documents.values()].reduce((n, d) => n + d.entities.reduce((m, e) => m + e.links.length, 0), 0);
+    const result = prepare(f, { limits: { links: before } }), links = result.document.entities.find(e => e.id === "a-1").links;
+    assert.deepEqual(links.map(l => l.id), ["next", "local"]);
+    assert.deepEqual(links[0], { ...f.request.links[0].link, target: "b-1" });
+    assert.equal(result.document.entities.reduce((n, e) => n + e.links.length, 0), before);
+    assert.deepEqual(result.provenance.linkMappings, [{ child: "west", entityId: "a-1", linkId: "next", to: { child: "east", id: "b-1" }, consumed: true }]);
+    assert.equal(f.documents.get("west").entities[0].links[1].externalDestination, "east-route");
+    delete f.request.links[0].insert;
+    assert.deepEqual(prepare(f).document.entities.find(e => e.id === "a-1").links.map(l => l.id), ["local", "next"]);
+  });
+  it("supports bounded after/index insertion and keeps default append", () => {
+    const f = createCompositionFixture(); f.request.links[0].from.id = "a-1";
+    assert.deepEqual(prepare(f).document.entities.find(e => e.id === "a-1").links.map(l => l.id), ["local", "cross"]);
+    f.request.links[0].insert = { index: 0 };
+    assert.deepEqual(prepare(f).document.entities.find(e => e.id === "a-1").links.map(l => l.id), ["cross", "local"]);
+    f.request.links[0].insert = { after: "local" };
+    assert.deepEqual(prepare(f).document.entities.find(e => e.id === "a-1").links.map(l => l.id), ["local", "cross"]);
+  });
+  it("rejects missing anchors, contradictory edits, altered consumed metadata and wrong destinations", () => {
+    for (const insert of [{ before: "absent" }, { index: -1 }, { index: 100 }, { before: "local", after: "local" }]) {
+      const f = crossing(); f.request.links[0].insert = insert; assert.throws(() => prepare(f));
+    }
+    const repeat = crossing(); repeat.request.links.push(structuredClone(repeat.request.links[0])); failure(repeat, "collision");
+    const drift = crossing(); drift.request.links[0].link.label = "Changed"; failure(drift, "drift");
+    const wrong = crossing(); wrong.request.links[0].to.id = "b-2"; failure(wrong, "reference");
+    const local = crossing(); local.request.links[0].consume = "local"; failure(local, "collision");
+  });
+  const replacement = () => {
+    const f = createCompositionFixture(); f.request.links = []; delete f.request.groupOrder;
+    const group = { id: "earlier", title: "Earlier authored stops", extensions: { "example.tour": { note: "Original note", stops: ["b-1", "a-2", "a-1", "b-2"] } } };
+    f.request.groupReplacements = [{ consume: [{ child: "west", id: "a-group" }, { child: "east", id: "b-group" }], group,
+      members: [{ child: "east", id: "b-1" }, { child: "west", id: "a-2" }, { child: "west", id: "a-1" }, { child: "east", id: "b-2" }], contextChild: "west" }];
+    f.extensions.push({ name: "example.tour", validation: { name: "example.tour", validateDocument: value => ({ data: value, warnings: [] }) }, composeDocument: () => ({}), rewrite: (value, context) => {
+      assert.equal(context.scope, "group"); assert.equal(context.child.key, "west"); assert.equal(context.child.resolveId("groups", "a-group"), "earlier"); return value;
+    } });
+    return f;
+  };
+  it("replaces two named child groups with one ordered mixed group and explicit provenance", () => {
+    const f = replacement(), result = prepare(f);
+    assert.deepEqual(result.document.groups, [{ ...f.request.groupReplacements[0].group, members: ["b-1", "a-2", "a-1", "b-2"] }]);
+    assert.deepEqual(result.provenance.groupReplacements, [{ outputId: "earlier", consumed: f.request.groupReplacements[0].consume, members: f.request.groupReplacements[0].members }]);
+    assert.deepEqual(result.provenance.aliases.filter(a => a.kind === "groups").map(a => [a.child, a.originalId, a.outputId]), [["west", "a-group", "earlier"], ["east", "b-group", "earlier"]]);
+    f.request.groupOrder = [{ composed: "earlier" }]; assert.equal(prepare(f).document.groups.length, 1);
+    assert.equal(f.documents.get("west").groups[0].id, "a-group");
+  });
+  it("rejects lossy/repeated replacement membership and requires explicit extension ownership/context", () => {
+    const lossy = replacement(); lossy.request.groupReplacements[0].members.pop(); failure(lossy, "reference");
+    const repeat = replacement(); repeat.request.groupReplacements[0].consume.push({ child: "west", id: "a-group" }); failure(repeat, "collision");
+    const context = replacement(); delete context.request.groupReplacements[0].contextChild; failure(context, "owner-required");
+    const opaque = replacement(); opaque.extensions.pop(); failure(opaque, "owner-required");
+    const alias = replacement(); alias.request.children[0].aliases = { groups: { "a-group": "contradiction" } }; failure(alias, "collision");
+    const order = replacement(); order.request.groupOrder = [{ child: "west", id: "a-group" }]; failure(order, "reference");
+  });
+
 });

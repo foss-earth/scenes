@@ -1,5 +1,5 @@
 import { ImageRecordChecker, isRecord, type ImageAsset, type ImageRepresentation, type RepresentationHooks } from "@foss-earth/images";
-import { SCENE_FORMAT, SCENE_FORMAT_VERSION, type SceneDiagnostic, type SceneValidation, type ResolvedAsset, type ResolvedPanorama, type UnsupportedEntity, type GroupRecord } from "./format.js";
+import { SCENE_FORMAT, SCENE_FORMAT_VERSION, type SceneDiagnostic, type SceneValidation, type ResolvedAsset, type ResolvedPanorama, type UnsupportedEntity, type GroupRecord, type ExternalDestinationRecord } from "./format.js";
 import { checkAttribution, checkOverview, checkPanorama, checkSceneMarkerStyle } from "./envelopeChecks.js";
 
 export interface SceneLimits { manifestBytes: number; entities: number; assets: number; links: number }
@@ -58,10 +58,25 @@ export function validateScene(input: unknown, options: ValidateSceneOptions): Sc
   }
   let base: URL | null = null;
   if (options.baseUrl) { try { base = new URL(String(options.baseUrl)); } catch { checker.fail("$", `the base URL ${String(options.baseUrl)} is not a URL`); } }
-  checker.keys(root, "$", ["format", "version", "id", "revision", "title", "requiredExtensions", "extensions", "assets", "entities", "groups", "initialPanorama", "overview", "markerStyle"]);
+  checker.keys(root, "$", ["format", "version", "id", "revision", "title", "requiredExtensions", "extensions", "assets", "entities", "groups", "initialPanorama", "overview", "markerStyle", "externalDestinations"]);
   const sceneStyle = root.markerStyle === undefined ? {} : checkSceneMarkerStyle(checker, root.markerStyle, "$.markerStyle");
   const id = checker.id(root.id, "$.id"), revision = checker.text(root.revision, "$.revision"), title = checker.text(root.title, "$.title");
   const extensions = checker.extensions(root.extensions, "$.extensions");
+  const externalDestinations = new Map<string, ExternalDestinationRecord>();
+  if (root.externalDestinations !== undefined) {
+    const declared = checker.array(root.externalDestinations, "$.externalDestinations") ?? [];
+    if (declared.length > limits.entities) checker.fail("$.externalDestinations", "exceeds the finite destination limit");
+    declared.forEach((value, index) => {
+      const path = `$.externalDestinations[${index}]`, record = checker.record(value, path);
+      if (!record) return;
+      checker.keys(record, path, ["id", "sceneId", "routeId"]);
+      const destinationId = checker.id(record.id, `${path}.id`), sceneId = checker.id(record.sceneId, `${path}.sceneId`);
+      const routeId = record.routeId === undefined ? null : checker.id(record.routeId, `${path}.routeId`);
+      if (sceneId === id) checker.fail(`${path}.sceneId`, "must name an external scene, not this scene");
+      if (destinationId && externalDestinations.has(destinationId)) checker.fail(`${path}.id`, "repeats an external destination ID");
+      if (destinationId && sceneId) externalDestinations.set(destinationId, { id: destinationId, sceneId, ...(routeId ? { routeId } : {}) });
+    });
+  }
   if (root.requiredExtensions !== undefined) (checker.array(root.requiredExtensions, "$.requiredExtensions") ?? []).forEach((name, index) => {
     const path = `$.requiredExtensions[${index}]`;
     if (typeof name !== "string") checker.fail(path, "must be an extension name");
@@ -145,6 +160,10 @@ export function validateScene(input: unknown, options: ValidateSceneOptions): Sc
     panoramas.set(panorama.id, panorama);
   });
   for (const panorama of panoramas.values()) panorama.links.forEach((link, index) => {
+    if (link.externalDestination !== undefined) {
+      if (!externalDestinations.has(link.externalDestination)) checker.fail(`${entityPaths.get(panorama.id)!}.links[${index}].externalDestination`, "names no declared external destination");
+      return;
+    }
     if (panoramas.has(link.target)) return;
     const path = `${entityPaths.get(panorama.id)!}.links[${index}].target`;
     if (unsupported.has(link.target)) checker.warn(path, `leads to "${link.target}", which is not supported; the link is listed disabled`);
@@ -172,5 +191,5 @@ export function validateScene(input: unknown, options: ValidateSceneOptions): Sc
   if (root.initialPanorama !== undefined) { const initial = checker.id(root.initialPanorama, "$.initialPanorama"); if (initial && !panoramas.has(initial)) checker.fail("$.initialPanorama", `names "${initial}", which is not a supported panorama of this scene`); else initialPanorama = initial; }
   const overview = root.overview === undefined ? null : checkOverview(checker, root.overview, "$.overview");
   if (checker.errors.length || !id || !revision || !title) return { ok: false, errors: checker.errors };
-  return { ok: true, scene: { format: SCENE_FORMAT, version: SCENE_FORMAT_VERSION, id, revision, title, baseUrl: base?.href ?? null, assets, extensionData, panoramas, entityOrder, unsupported, groups, initialPanorama, overview, extensions, warnings: checker.warnings, manifestBytes } };
+  return { ok: true, scene: { format: SCENE_FORMAT, version: SCENE_FORMAT_VERSION, id, revision, title, baseUrl: base?.href ?? null, assets, extensionData, panoramas, entityOrder, unsupported, groups, externalDestinations, initialPanorama, overview, extensions, warnings: checker.warnings, manifestBytes } };
 }

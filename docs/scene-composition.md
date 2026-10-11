@@ -1,9 +1,9 @@
 # Checked scene composition
 
-Prepared 2026-10-10, source only. The new implementation, declarations, fixtures
-and installed consumer have not run. No new package/revision or Campus adoption
-is claimed. The current checked Scenes d58408d release does not contain these
-exports. Qualification requires the separate shared verification grant.
+Prepared 2026-10-10. The existing f5daa60273a4b5d89ca62efec94be61bc07f6dfc
+release contains the original producer. The additive operations below are an
+uncommitted local candidate until the exact package checks finish. Consult the
+Earth handoff for source/archive/installed receipts and qualification limits.
 
 `@foss-earth/scenes/composition` exports `composeSceneDocuments`, its input,
 owner-port, result and limit types, and `SceneCompositionError`. The root barrel
@@ -104,14 +104,64 @@ verified once. Different asset definitions are not silently deduplicated based
 on titles, coordinates, pixels or IDs. Colliding definitions may be explicitly
 aliased while continuing to reference the same pinned media.
 
-Each child must be valid standalone v1: local links name its supported
-panoramas. A parent link names `from: {child, id}`, `to: {child, id}` and the
-authored link fields except `target`. It appends in request order, uses the
-normal v1 target field after mapping and cannot replace an existing source link
-with the same ID. Unresolved external/local links fail; no link is silently
-dropped. The Campus author must partition local navigation and explicitly carry
-the four deliberate cross-campus links into its aggregate request. Scenes does
-not make that editorial decision or alter the legacy published document.
+Each child must be valid standalone v1. Local links name its supported
+panoramas; external links name a validated declared destination and panorama
+through the [host navigation contract](navigation.md). A parent link names
+`from: {child, id}`, `to: {child, id}` and the authored fields except `target`
+and `externalDestination`. The default still appends. An explicit
+`insert: {before: "previous"}`, `{after: "next"}` or `{index: 0}` positions it
+within the source entity's link array. Exactly one mode is allowed. Missing or
+ambiguous anchors, out-of-range indexes and repeated/contradictory edits fail.
+
+Use `consume: "next"` for an existing external crossing. It must retain the
+link ID and complete metadata, and map the original declared scene and named
+panorama to the explicit child destination. The result replaces that link once
+with an ordinary local target, retaining its original position unless `insert`
+is supplied. It never adds a duplicate or changes the count when consuming.
+`provenance.linkMappings` records the original child/entity/link and destination.
+
+Named groups can be replaced explicitly, with no geographic inference:
+
+```ts
+request.links = [
+  { from: {child: "west", id: "west-last"},
+    to: {child: "east", id: "east-first"},
+    consume: "next-tour", link: originalNextTourMetadata,
+    insert: {before: "previous-stop"} },
+];
+request.groupReplacements = [{
+  consume: [{child: "west", id: "earlier"}, {child: "east", id: "earlier"}],
+  group: {id: "earlier", title: originalTitle, extensions: originalMetadata},
+  members: [{child: "west", id: "stop-a"}, {child: "west", id: "stop-b"},
+    {child: "east", id: "stop-c"}, {child: "east", id: "stop-d"}],
+  contextChild: "west",
+}];
+// A supplied groupOrder is the complete resulting permutation, for example:
+request.groupOrder = [{composed: "earlier"}, ...remainingUnconsumedGroupRefs];
+```
+
+The replacement preserves the complete union of consumed memberships exactly
+once, in the specified order. Its group ID/title/extension records are authored
+by the host. A source group cannot be consumed twice; contradictory aliases,
+unconsumed collisions, lost or repeated members and missing references fail.
+Default group order emits the replacement at the first consumed group's
+position. Explicit order uses `{composed: id}` for it, never the consumed child
+reference. Ordinary group aliases remain injective; only explicit replacement
+creates a many-to-one mapping, retained in both aliases and
+`provenance.groupReplacements` with the consumed references and authored members.
+
+All extension owners remain required, including on consumed source groups and
+new authored metadata. A replacement with extensions requires `contextChild` so
+the owner receives the chosen child base and envelope resolver. Scenes does not
+interpret or merge opaque notes/tour-stop lists. The public owner can preserve
+and validate those original records; the host supplies them without placing
+application constants or a second producer in the shared package. The Campus
+recipe is to consume its four already authored crossings, position next before
+previous, replace its two earlier-stop groups with the authored four-member
+order and retain every remaining entity/group in explicit order. Its intended
+60 entities, 134 links and 24 groups are consumer acceptance requirements,
+not generic package defaults or a claim that its application has adopted this
+candidate.
 
 Captions, credits, unknown/absent heights, north/pose/alignment, capture and marker
 offsets, link direction/arrival view and group memberships are preserved. Child

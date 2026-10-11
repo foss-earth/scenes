@@ -69,6 +69,12 @@
     "markerStyle": {
       "$ref": "#/$defs/markerStyle",
       "description": "How every orb looks, unless its marker's style overrides it."
+    },
+    "externalDestinations": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/externalDestination"
+      }
     }
   },
   "$defs": {
@@ -355,6 +361,9 @@
         },
         "extensions": {
           "$ref": "#/$defs/extensions"
+        },
+        "externalDestination": {
+          "$ref": "#/$defs/id"
         }
       }
     },
@@ -648,6 +657,25 @@
               }
             }
           ]
+        }
+      }
+    },
+    "externalDestination": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "sceneId"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "sceneId": {
+          "$ref": "#/$defs/id"
+        },
+        "routeId": {
+          "$ref": "#/$defs/id"
         }
       }
     }

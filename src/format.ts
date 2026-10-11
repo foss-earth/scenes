@@ -71,9 +71,13 @@ export interface ViewRecord {
   verticalFovDeg: number;
 }
 
+/** Declared host selection identity; never a fetch URL or guessed URL parameter. */
+export interface ExternalDestinationRecord { id: string; sceneId: string; routeId?: string }
 export interface LinkRecord {
   id: string;
   target: string;
+  /** When present, target is a named panorama in this declared external scene. */
+  externalDestination?: string;
   label: string;
   /** Where the hotspot sits in the source panorama's ENU view; without it the link is list-only. */
   direction?: { headingDeg: number; pitchDeg: number };
@@ -125,6 +129,7 @@ export interface SceneDocument<R extends ImageRepresentation = ImageRepresentati
   assets: readonly PanoramaAssetRecord<R>[];
   entities: readonly (PanoramaEntityRecord | { id: string; type: string; required?: boolean })[];
   groups?: readonly GroupRecord[];
+  externalDestinations?: readonly ExternalDestinationRecord[];
   initialPanorama?: string;
   overview?: OverviewRecord;
   /** Every orb's style, unless its marker's `style` overrides it. */
@@ -159,6 +164,8 @@ export interface ValidatedScene<R extends ImageRepresentation = ImageRepresentat
   entityOrder: readonly string[];
   unsupported: ReadonlyMap<string, UnsupportedEntity>;
   groups: readonly GroupRecord[];
+  /** Optional for legacy structural hosts; validated v1 documents always supply it. */
+  externalDestinations?: ReadonlyMap<string, ExternalDestinationRecord>;
   initialPanorama: string | null;
   overview: OverviewRecord | null;
   extensions: SceneExtensions;

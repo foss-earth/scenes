@@ -1,4 +1,4 @@
-import type { ResolvedPanorama, ValidatedScene } from "./format.js";
+import type { LinkRecord, ResolvedPanorama, ValidatedScene } from "./format.js";
 import { resolveSceneInput, type SceneInput } from "./manifest.js";
 import type { SceneHistoryEntry } from "./history.js";
 import type { LoadSceneOptions, LoadSceneResult, SceneActionResult, SceneEntryStatus, SceneHandle, ScenePlacement, ScenePreparedImage, SceneStatus, SceneViewerImageInput, SceneViewerStatus } from "./ports.js";
@@ -51,7 +51,7 @@ function createSceneHandle(options: LoadSceneOptions): SceneHandle & { replaceVa
         marker: { ...record.marker, radiusMeters: input.placement.radiusMeters, authoredRadius: record.marker.radiusMeters !== undefined },
         capture: input.details?.capture ?? null, pose: { ...record.imagePose, aligned: record.imagePose.aligned ?? null }, attribution: input.credits,
         previewDetail: observations?.previewDetail ?? null, images: observations?.images ?? [],
-        links: record.links.map(link => ({ id: link.id, label: link.label, target: link.target, enabled: Boolean(scene?.panoramas.has(link.target)), placed: Boolean(link.direction) })),
+        links: record.links.map(link => ({ id: link.id, label: link.label, target: link.target, ...(link.externalDestination ? { externalDestination: link.externalDestination } : {}), enabled: link.externalDestination ? Boolean(options.externalNavigation && scene?.externalDestinations?.has(link.externalDestination)) : Boolean(scene?.panoramas.has(link.target)), placed: Boolean(link.direction) })),
       };
     });
     return { ...viewer, phase: disposed ? "disposed" : viewer.phase, sceneId: scene?.id ?? "", revision: scene?.revision ?? "", title: scene?.title ?? "", generation, hovered, entries, groups: scene?.groups ?? [], credits: viewer.credits ?? (viewer.active && current?.entries.get(viewer.active) ? [{ ...current.entries.get(viewer.active)!.input.credits, assetId: current.entries.get(viewer.active)!.input.asset.id }] : []), overview, warnings: scene?.warnings ?? [], renderingAvailable: viewer.renderingAvailable ?? true, unavailableReason: viewer.unavailableReason ?? null, lastError: lastError ?? viewer.lastError ?? null, view: viewer.view ?? null };
@@ -70,8 +70,8 @@ function createSceneHandle(options: LoadSceneOptions): SceneHandle & { replaceVa
           ...(entity.description ? { description: entity.description } : {}), credits: asset.attribution,
           ...(entity.initialView ? { initialView: entity.initialView } : {}),
           actions: entity.links.map(link => ({ id: link.id, label: link.label, ...(link.direction ? { direction: link.direction } : {}), activate: async () => {
-            if (disposed || current !== candidate || !scene.panoramas.has(link.target)) return false;
-            return (await enter(link.target, { ...(link.arrivalView ? { view: link.arrivalView } : {}) })).ok;
+            if (disposed || current !== candidate) return false;
+            return (await track(followLink(link, candidate, entity.id))).ok;
           } })),
           details: { capture: { latitudeDeg: entity.capture.latitudeDeg, longitudeDeg: entity.capture.longitudeDeg, heightMeters: entity.capture.height?.meters ?? null, horizontalAccuracyMeters: entity.capture.horizontalAccuracyMeters ?? null }, groups: scene.groups.filter(group => group.members.includes(entity.id)).map(group => group.title) },
         };
@@ -146,6 +146,28 @@ function createSceneHandle(options: LoadSceneOptions): SceneHandle & { replaceVa
       if (!result.ok && result.reason !== "cancelled") lastError = result.message;
       emit(); return result;
     } catch (error) { if (!signal.aborted) { lastError = messageOf(error); report(entry, "navigation", error); emit(); } return failed(signal.aborted ? "cancelled" : "failed", messageOf(error)); }
+  }
+  async function followLink(link: LinkRecord, published: Candidate, sourceId: string, followOptions: { signal?: AbortSignal } = {}): Promise<SceneActionResult> {
+    if (disposed) return failed("disposed", "The scene is disposed.");
+    if (current !== published) return failed("cancelled", "The scene changed before following.");
+    if (!link.externalDestination) return enter(link.target, { ...followOptions, ...(link.arrivalView ? { view: link.arrivalView } : {}) });
+    const destination = published.scene.externalDestinations?.get(link.externalDestination);
+    if (!destination || !options.externalNavigation) return failed("unavailable", "The host cannot follow this external destination.");
+    const signal = followOptions.signal ? AbortSignal.any([followOptions.signal, published.scope.signal]) : published.scope.signal;
+    if (signal.aborted) return failed("cancelled", "Following was cancelled.");
+    const entry = published.entries.get(sourceId) ?? null;
+    if (!entry) return failed("unavailable", "The source panorama is unavailable.");
+    try {
+      const result = await options.externalNavigation.navigate({ destination: { ...destination }, panoramaId: link.target,
+        source: { sceneId: published.scene.id, revision: published.scene.revision, panoramaId: entry.record.id }, link,
+        signal });
+      if (signal.aborted) return failed("cancelled", "Following was cancelled.");
+      if (!result.ok && result.reason !== "cancelled") { lastError = result.message; emit(); }
+      return result;
+    } catch (error) {
+      if (!signal.aborted) { lastError = messageOf(error); report(entry, "navigation", error); emit(); }
+      return failed(signal.aborted ? "cancelled" : "failed", messageOf(error));
+    }
   }
   /** The viewer owns the exit animation; its existing subscription proves when
    * navigation has returned. Scene replacement/disposal cancels this observer. */
@@ -259,7 +281,7 @@ function createSceneHandle(options: LoadSceneOptions): SceneHandle & { replaceVa
   return {
     get status() { return snapshot(); }, get disposed() { return disposed; }, replaceValidated,
     enter, exit: () => track(exit()), showOverview,
-    async follow(id, followOptions = {}) { const active = options.viewer.status().active; const link = active ? current?.entries.get(active)?.record.links.find(item => item.id === id) : undefined; return link ? enter(link.target, { ...followOptions, ...(link.arrivalView ? { view: link.arrivalView } : {}) }) : failed("unavailable", `Link "${id}" is not available from the current panorama.`); },
+    async follow(id, followOptions = {}) { const active = options.viewer.status().active; const link = active ? current?.entries.get(active)?.record.links.find(item => item.id === id) : undefined; return link && current && active ? track(followLink(link, current, active, followOptions)) : failed("unavailable", `Link "${id}" is not available from the current panorama.`); },
     async replace(input, replaceOptions = {}) {
       if (disposed) return { ok: false, errors: [{ path: "$", message: "The scene is disposed." }] };
       const context = beginReplacement();
@@ -279,7 +301,7 @@ function createSceneHandle(options: LoadSceneOptions): SceneHandle & { replaceVa
     hotspots() {
       const active = options.viewer.status().active;
       const links = !disposed && options.viewer.status().phase === "immersive" && active ? current?.entries.get(active)?.record.links ?? [] : [];
-      return links.flatMap(link => { const point = link.direction && options.projectLink?.(link.direction); return point && current?.entries.has(link.target) ? [{ id: link.id, label: link.label, ...point }] : []; });
+      return links.flatMap(link => { const point = link.direction && options.projectLink?.(link.direction); return point && (link.externalDestination ? options.externalNavigation && current?.scene.externalDestinations?.has(link.externalDestination) : current?.entries.has(link.target)) ? [{ id: link.id, label: link.label, ...point }] : []; });
     },
     subscribe(listener) { if (!disposed) { listeners.add(listener); if (current) listener(snapshot()); } return () => { listeners.delete(listener); }; },
     onFrame(listener) { return disposed ? () => {} : options.frames?.subscribe(listener) ?? (() => {}); },

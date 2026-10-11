@@ -52,9 +52,10 @@ export function checkAttribution(checker: Checker, value: unknown, path: string,
 function checkLink(checker: Checker, value: unknown, path: string): LinkRecord | null {
   const record = checker.record(value, path);
   if (!record) return null;
-  checker.keys(record, path, ["id", "target", "label", "direction", "arrivalView", "extensions"]);
+  checker.keys(record, path, ["id", "target", "externalDestination", "label", "direction", "arrivalView", "extensions"]);
   const id = checker.id(record.id, `${path}.id`);
   const target = checker.id(record.target, `${path}.target`);
+  const externalDestination = record.externalDestination === undefined ? null : checker.id(record.externalDestination, `${path}.externalDestination`);
   const label = checker.text(record.label, `${path}.label`);
   let direction: LinkRecord["direction"];
   if (record.direction !== undefined) {
@@ -69,7 +70,7 @@ function checkLink(checker: Checker, value: unknown, path: string): LinkRecord |
   const arrivalView = record.arrivalView === undefined ? undefined : checkView(checker, record.arrivalView, `${path}.arrivalView`) ?? undefined;
   const extensions = checker.extensions(record.extensions, `${path}.extensions`);
   if (!id || !target || !label) return null;
-  return { id, target, label, ...(direction ? { direction } : {}), ...(arrivalView ? { arrivalView } : {}), ...(Object.keys(extensions).length ? { extensions } : {}) };
+  return { id, target, label, ...(externalDestination ? { externalDestination } : {}), ...(direction ? { direction } : {}), ...(arrivalView ? { arrivalView } : {}), ...(Object.keys(extensions).length ? { extensions } : {}) };
 }
 
 /** A style's own properties: undefined inherits the scene's, null turns it off. */
