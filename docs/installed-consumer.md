@@ -22,7 +22,7 @@ is fixture-only; Campus requires a separate checked public preview-sheet owner
 composition hook. Existing closure, realpath, optional-runtime and negative
 guards remain required.
 
-Follow the [contribution policy](../CONTRIBUTING.md), including commit attribution.
+Follow the [contribution policy](https://github.com/foss-earth/.github/blob/main/CONTRIBUTING.md), including commit attribution.
 
 This harness is prepared source, UNRUN. Request the shared ledger slot before
 installing, building, packing or invoking it. Old foundation archives do not

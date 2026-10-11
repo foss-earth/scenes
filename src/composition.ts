@@ -82,8 +82,10 @@ export const DEFAULT_SCENE_COMPOSITION_LIMITS: Readonly<SceneCompositionLimits> 
 });
 export type SceneCompositionErrorCode = "invalid-request" | "limit" | "cancelled" | "missing-input" | "drift" | "invalid-scene" | "collision" | "reference" | "owner-required" | "media";
 export class SceneCompositionError extends Error {
-  constructor(readonly code: SceneCompositionErrorCode, readonly path: string, message: string) {
-    super(`${path}: ${message}`); this.name = "SceneCompositionError";
+  readonly code: SceneCompositionErrorCode;
+  readonly path: string;
+  constructor(code: SceneCompositionErrorCode, path: string, message: string) {
+    super(`${path}: ${message}`); this.code = code; this.path = path; this.name = "SceneCompositionError";
   }
 }
 export interface SceneCompositionChildContext {
