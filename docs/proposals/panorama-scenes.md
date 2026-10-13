@@ -1167,9 +1167,10 @@ rendered device pixels are different units. A range means one two-thumb control.
 | `cacheMiB` | MiB, 0–1024 | 32; bounded enabled experiment | Cache; allocated/used estimates |
 | `cacheSizeRange` | output px range, 16–min(2048, device limit) | [32,256]; overview-scale outputs | Cache; output dimensions; quality comparison |
 | `cacheRefreshTexels` | texels/frame, 0–16777216 | 262144; four 256² outputs | Cache; texels/time; direct fallback |
-| `verticalFovRange` | deg range, 20–120 | [35,90]; prototype look range | 360 image settings → Looking; current/limited FOV |
+| `verticalFovRange` | deg range, 10–179 | [20,120], as the user asked (was [35,90] within 20–120) | 360 image settings → Looking; current/limited FOV |
 | `pitchRange` | deg range, −89.9–89.9 | [−85,85]; avoid look-axis degeneracy | 360 image settings → Looking; current pitch; pole-content trial |
 | `entryOrientation` | level-current / authored | level-current; preserve azimuth, level pitch | 360 image settings → Entering; target/provenance |
+| `entryFov` | deg, 10–179, or the map's | 100, as the user asked (was the map camera's FOV); a scene's view brings its own | 360 image settings → Entering ("Field of view"); arrival FOV within the zoom range |
 | `flightDuration` | ms, 100–5000, or Off | 1000, on as the user asked; long enough to follow, short enough not to wait on | Scenes → Motion ("Fly into and out of 360 images"); phase; motion trial |
 | `expandDuration` | ms, 0–2000 | 350; short reveal prototype, when the camera does not fly in | Scenes → Motion; phase/progress; motion trial |
 | `orientDuration` | ms, 0–2000 | 250; separate leveling phase | 360 image settings → Entering; current/target orientation |
