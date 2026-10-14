@@ -57,7 +57,7 @@ function main() {
     const s = report.summary;
     const mib = bytes => `${(bytes / 1024 / 1024).toFixed(1)} MiB`;
     console.log(`${report.ok ? "OK" : "FAILED"}: ${s.title} (${s.id}, revision ${s.revision})`);
-    console.log(`  ${s.panoramas} panoramas, ${s.assets} images, ${s.groups} groups, ${s.links} links; manifest ${s.manifestBytes} bytes`);
+    console.log(`  ${s.spheres} panoramas, ${s.assets} images, ${s.groups} groups, ${s.links} links; manifest ${s.manifestBytes} bytes`);
     console.log(`  ${s.files} media files, ${mib(s.mediaBytes)}${s.largestFile ? `; largest ${mib(s.largestFile.bytes)}, ${s.largestFile.url}` : ""}`);
     if (s.sheets) console.log(`  ${s.sheets} preview ${s.sheets === 1 ? "sheet" : "sheets"} holding ${s.sheetCubes} cubes; its faces are within ${s.sheetLowestPsnrDb} dB of their files`);
   } else {

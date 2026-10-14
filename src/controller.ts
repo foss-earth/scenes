@@ -38,7 +38,7 @@ export function createSceneController(options: SceneControllerOptions): SceneCon
   const failScene = (url: string, errors: readonly SceneDiagnostic[]): void => {
     if (!errors.length) return;
     const first = errors[0], cause = first.path === "$" ? first.message : `${first.path}: ${first.message}`;
-    fail({ kind: "scene", panorama: null, cause, message: `${cause.includes(url) ? "The scene" : `The scene ${url}`} could not be loaded: ${/[.!?]$/.test(cause) ? cause : `${cause}.`}${errors.length > 1 ? ` Scenes → Content lists ${errors.length - 1} more.` : ""}` });
+    fail({ kind: "scene", sphere: null, cause, message: `${cause.includes(url) ? "The scene" : `The scene ${url}`} could not be loaded: ${/[.!?]$/.test(cause) ? cause : `${cause}.`}${errors.length > 1 ? ` Scenes → Content lists ${errors.length - 1} more.` : ""}` });
   };
   async function load(input: string, loadOptions: { exampleId?: boolean } = {}): Promise<boolean> {
     if (destroyed || options.signal?.aborted) return false;

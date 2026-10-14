@@ -30,7 +30,7 @@ await assert.rejects(import(pathToFileURL(outside)), /OUTSIDE_ISOLATED_WORKSPACE
 const { JSDOM } = await import(resolvePublic("jsdom")); dom = new JSDOM("<!doctype html><main></main>");
 for (const name of ["document", "window", "navigator", "fetch", "requestAnimationFrame"]) Object.defineProperty(globalThis, name, { configurable: true, get() { throw new Error(`Pure import read ${name}`); } });
 const core = await import(resolvePublic("@foss-earth/scenes")), browser = await import(resolvePublic("@foss-earth/scenes/browser")), panel = await import(resolvePublic("@foss-earth/scenes/panel"));
-const viewerCore = await import(resolvePublic("@foss-earth/360")), preview = await import(resolvePublic("@foss-earth/preview-sheets/scene-extension"));
+const viewerCore = await import(resolvePublic("@foss-earth/image-viewer")), preview = await import(resolvePublic("@foss-earth/preview-sheets/scene-extension"));
 const checker = await import(resolvePublic("@foss-earth/scenes/node")), previewDocument = await import(resolvePublic("@foss-earth/scenes/preview-sheets"));
 const composition = await import(resolvePublic("@foss-earth/scenes/composition")), compositionNode = await import(resolvePublic("@foss-earth/scenes/composition-node"));
 const compositionFixture = await import(pathToFileURL(path.join(consumer, "release-composition.fixture.mjs")));
@@ -121,7 +121,7 @@ offLog(); offLog(); logController.destroy(); gameLog.destroy();
 const packageDirectory = path.dirname(path.dirname(fileURLToPath(resolvePublic("@foss-earth/scenes")))), manifest = JSON.parse(readFileSync(path.join(packageDirectory, "package.json"), "utf8"));
 for (const name of [".", "./browser", "./panel", "./node", "./composition", "./composition-node", "./preview-sheets"]) assert.ok(readFileSync(path.join(packageDirectory, manifest.exports[name].types), "utf8").length);
 const schema = JSON.parse(readFileSync(new URL(resolvePublic("@foss-earth/scenes/schema.json")), "utf8")); assert.equal(schema.$defs.panoramaAsset.properties.representations.contains, undefined); assert.match(readFileSync(new URL(resolvePublic("@foss-earth/scenes/panel.css")), "utf8"), /flex-wrap/);
-const { encodePng } = await import(resolvePublic("@foss-earth/images/node")), { CUBE_FACE_NAMES } = await import(resolvePublic("@foss-earth/cubemap/core"));
+const { encodePng } = await import(resolvePublic("@foss-earth/images/node")), { CUBE_FACE_NAMES } = await import(resolvePublic("@foss-earth/sphere-cubemap/core"));
 const { createPreviewFixture } = await import(pathToFileURL(path.join(consumer, "preview-files.fixture.mjs")));
 const mediaFolder = path.join(consumer, "scene-files"); mkdirSync(mediaFolder); const fixture = createPreviewFixture(mediaFolder, { encodePng, faces: CUBE_FACE_NAMES });
 const built = previewDocument.buildScenePreviewSheets(fixture.manifest); assert.equal(built.cubes, 1); assert.equal(built.document.revision, "host-revision");

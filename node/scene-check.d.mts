@@ -3,7 +3,7 @@ import type { SceneFileReport, ValidatedScene } from "@foss-earth/scenes";
 export type { SceneFileReport } from "@foss-earth/scenes";
 export interface SceneCheckSummary {
   id: string; revision: string; title: string; manifestBytes: number;
-  panoramas: number; unsupported: number; assets: number; groups: number; links: number;
+  spheres: number; unsupported: number; assets: number; groups: number; links: number;
   files: number; mediaBytes: number; largestFile: SceneFileReport["largestFile"];
   sheets: number; sheetCubes: number; sheetLowestPsnrDb: number | null;
 }

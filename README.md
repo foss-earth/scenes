@@ -1,6 +1,6 @@
 # @foss-earth/scenes
 
-The version-one scene format for FOSS Earth, and the code that loads and presents scenes. A scene is a manifest of images (panoramas and photos) placed on the globe, with captures, markers, overviews, groups and links between them.
+The version-one scene format for FOSS Earth, and the code that loads and presents scenes. A scene is a manifest of images (spheres and photos) placed on the globe, with captures, markers, overviews, groups and links between them.
 
 This package owns the scene envelope, references, authored ordering, capture, marker and overview records, groups and links, manifest validation and input, scene replacement, history, the scene controller and the Scenes panel. It imports common image records and checks from [images](https://github.com/foss-earth/images). It creates no renderer, image broker, cache, upload queue, camera clock or feature application.
 
@@ -110,7 +110,7 @@ Limits: it does not promise atomic multi-file publication, hard-link alias detec
 - [Scene composition](docs/scene-composition.md)
 - [Navigation](docs/navigation.md) and [navigation lifecycle](docs/navigation-lifecycle.md)
 - [Node checker](docs/node-checker.md)
-- [Panorama scenes proposal](docs/proposals/panorama-scenes.md): the original design proposal, kept as written. Its dated evidence, staged proposals and old paths are historical. This README describes the current contracts.
+- [Sphere scenes proposal](docs/proposals/panorama-scenes.md): the original design proposal, kept as written. Its dated evidence, staged proposals and old paths are historical. This README describes the current contracts.
 
 Tests cover the envelope, schema, limits and URLs, progressive readiness, preservation of the prior scene on pre-publication failure, stale cleanup, history, controller pointers and the injected panel lifecycle. `tests/fixtures/proposal-example.scene.json` is the full example manifest from the proposal. Envelope tests use a neutral test owner, and spatial fixtures live with the format libraries. `fixtures/360-consumer.ts` uses only public 360, preview-sheets and scenes declarations.
 

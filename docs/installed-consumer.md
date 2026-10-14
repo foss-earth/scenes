@@ -45,9 +45,9 @@ harness supports one compatible version per package name; it rejects unknown
 packages or versions. Include all jsdom dependencies, not only jsdom's archive.
 Optional native canvas, renderer/Babylon and React peers are unnecessary here.
 
-Required names are `@foss-earth/scenes`, `@foss-earth/images`, `@foss-earth/360`,
-`@foss-earth/tiled-cubemap`, `@foss-earth/preview-sheets`, `@foss-earth/cubemap`,
-`@foss-earth/equirectangular`, `@foss-earth/ui` (current staging version 0.1.0), `jpeg-js` 0.4.4,
+Required names are `@foss-earth/scenes`, `@foss-earth/images`, `@foss-earth/image-viewer`,
+`@foss-earth/sphere-tiled-cubemap`, `@foss-earth/preview-sheets`, `@foss-earth/sphere-cubemap`,
+`@foss-earth/sphere-equirectangular`, `@foss-earth/ui` (current staging version 0.1.0), `jpeg-js` 0.4.4,
 `jsdom` 29.1.1, `typescript` 5.9.3, `@types/node` and `undici-types`. Their exact
 archive digests and the remaining transitive version closure are prerequisites,
 not fabricated pins. The accepted CI9e component is installed separately for

@@ -1,5 +1,5 @@
 import { ImageRecordChecker as Checker, resolveImageUrl as resolveUrl } from "@foss-earth/images";
-import type { AttributionRecord, HeightRecord, ViewRecord, LinkRecord, ResolvedMarkerStyle, ResolvedPanorama, OverviewRecord } from "./format.js";
+import type { AttributionRecord, HeightRecord, ViewRecord, LinkRecord, ResolvedMarkerStyle, ResolvedSphere, OverviewRecord } from "./format.js";
 type Json = Record<string, unknown>;
 const HEX_COLOUR = /^#(?:[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
 const OUTLINE_WIDTH_PX = { min: 0, max: 32 };
@@ -115,7 +115,7 @@ function resolveMarkerStyle(scene: StyleOverrides, own: StyleOverrides): Resolve
   return { outline: outline && outline.widthPx > 0 && outline.color[3] > 0 ? outline : null, hoverScale: hover ?? 1 };
 }
 
-export function checkPanorama(checker: Checker, record: Json, path: string, sceneStyle: StyleOverrides): ResolvedPanorama | null {
+export function checkSphere(checker: Checker, record: Json, path: string, sceneStyle: StyleOverrides): ResolvedSphere | null {
   checker.keys(record, path, ["id", "type", "assetId", "title", "description", "capture", "imagePose", "marker", "initialView", "links", "required", "extensions"]);
   const id = checker.id(record.id, `${path}.id`);
   const assetId = checker.id(record.assetId, `${path}.assetId`);
@@ -124,7 +124,7 @@ export function checkPanorama(checker: Checker, record: Json, path: string, scen
   if (record.required !== undefined && typeof record.required !== "boolean") checker.fail(`${path}.required`, "must be true or false");
 
   const captureRecord = checker.record(record.capture, `${path}.capture`);
-  let capture: ResolvedPanorama["capture"] | null = null;
+  let capture: ResolvedSphere["capture"] | null = null;
   if (captureRecord) {
     checker.keys(captureRecord, `${path}.capture`, ["longitudeDeg", "latitudeDeg", "height", "horizontalAccuracyMeters"]);
     const place = checkLongitudeLatitude(checker, captureRecord, `${path}.capture`);
@@ -134,7 +134,7 @@ export function checkPanorama(checker: Checker, record: Json, path: string, scen
   }
 
   const poseRecord = checker.record(record.imagePose, `${path}.imagePose`);
-  let imagePose: ResolvedPanorama["imagePose"] | null = null;
+  let imagePose: ResolvedSphere["imagePose"] | null = null;
   if (poseRecord) {
     checker.keys(poseRecord, `${path}.imagePose`, ["headingDeg", "pitchDeg", "rollDeg", "aligned"]);
     const headingDeg = checker.within(poseRecord.headingDeg, `${path}.imagePose.headingDeg`, 0, 360, true, false);
@@ -146,7 +146,7 @@ export function checkPanorama(checker: Checker, record: Json, path: string, scen
   }
 
   const markerRecord = checker.record(record.marker, `${path}.marker`);
-  let marker: ResolvedPanorama["marker"] | null = null;
+  let marker: ResolvedSphere["marker"] | null = null;
   if (markerRecord) {
     checker.keys(markerRecord, `${path}.marker`, ["mode", "eastM", "northM", "offsetM", "radiusMeters", "style"]);
     const mode = checker.oneOf(markerRecord.mode, `${path}.marker.mode`, ["ground-relative", "capture-relative"] as const);

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Adds preview sheets to a scene on disk (docs/scenes/format.md, "Preview
- * sheets"): one image holding the faces of every panorama's smallest preview
+ * sheets"): one image holding the faces of every sphere's smallest preview
  * cube, so a first visit shows all the scene's orbs after one request, not six
  * an orb. The cubes' own face files stay. Sheets the scene already has are
  * replaced.

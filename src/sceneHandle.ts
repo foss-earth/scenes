@@ -1,11 +1,11 @@
-import type { LinkRecord, ResolvedPanorama, ValidatedScene } from "./format.js";
+import type { LinkRecord, ResolvedSphere, ValidatedScene } from "./format.js";
 import { resolveSceneInput, type SceneInput } from "./manifest.js";
 import type { SceneHistoryEntry } from "./history.js";
 import type { LoadSceneOptions, LoadSceneResult, SceneActionResult, SceneEntryStatus, SceneHandle, ScenePlacement, ScenePreparedImage, SceneStatus, SceneViewerImageInput, SceneViewerStatus } from "./ports.js";
 
 const failed = (reason: Exclude<SceneActionResult, { ok: true }>["reason"], message: string): SceneActionResult => ({ ok: false, reason, message });
 const messageOf = (error: unknown): string => error instanceof Error ? error.message : String(error);
-interface Entry { record: ResolvedPanorama; input: SceneViewerImageInput; placement: ScenePlacement; prepared: ScenePreparedImage | null; preview: SceneEntryStatus["preview"]; message: string | null; offPlacement: (() => void) | null }
+interface Entry { record: ResolvedSphere; input: SceneViewerImageInput; placement: ScenePlacement; prepared: ScenePreparedImage | null; preview: SceneEntryStatus["preview"]; message: string | null; offPlacement: (() => void) | null }
 interface Candidate { scene: ValidatedScene; entries: Map<string, Entry>; scope: AbortController }
 /** Validates the envelope before asking the supplied viewer or world ports for any image. */
 export async function loadScene(input: SceneInput, options: LoadSceneOptions): Promise<LoadSceneResult> {
@@ -28,7 +28,7 @@ function createSceneHandle(options: LoadSceneOptions): SceneHandle & { replaceVa
   const emit = (): void => { if (current) for (const listener of [...listeners]) { try { listener(snapshot()); } catch { /* A host observer does not own scene cleanup. */ } } };
   const report = (entry: Entry | null, kind: "preview" | "navigation", error: unknown): void => {
     const cause = messageOf(error);
-    try { options.onFailure?.({ kind, panorama: entry ? { id: entry.record.id, title: entry.record.title } : null, cause, message: `${entry ? `The panorama ${entry.record.title}` : "The scene"} could not ${kind === "preview" ? "load its preview" : "navigate"}: ${cause}.` }); } catch { /* Reporting must not stop resource cleanup. */ }
+    try { options.onFailure?.({ kind, sphere: entry ? { id: entry.record.id, title: entry.record.title } : null, cause, message: `${entry ? `The panorama ${entry.record.title}` : "The scene"} could not ${kind === "preview" ? "load its preview" : "navigate"}: ${cause}.` }); } catch { /* Reporting must not stop resource cleanup. */ }
   };
   const release = (candidate: Candidate): void => {
     candidate.scope.abort(new Error("The scene generation was released."));
@@ -51,7 +51,7 @@ function createSceneHandle(options: LoadSceneOptions): SceneHandle & { replaceVa
         marker: { ...record.marker, radiusMeters: input.placement.radiusMeters, authoredRadius: record.marker.radiusMeters !== undefined },
         capture: input.details?.capture ?? null, pose: { ...record.imagePose, aligned: record.imagePose.aligned ?? null }, attribution: input.credits,
         previewDetail: observations?.previewDetail ?? null, images: observations?.images ?? [],
-        links: record.links.map(link => ({ id: link.id, label: link.label, target: link.target, ...(link.externalDestination ? { externalDestination: link.externalDestination } : {}), enabled: link.externalDestination ? Boolean(options.externalNavigation && scene?.externalDestinations?.has(link.externalDestination)) : Boolean(scene?.panoramas.has(link.target)), placed: Boolean(link.direction) })),
+        links: record.links.map(link => ({ id: link.id, label: link.label, target: link.target, ...(link.externalDestination ? { externalDestination: link.externalDestination } : {}), enabled: link.externalDestination ? Boolean(options.externalNavigation && scene?.externalDestinations?.has(link.externalDestination)) : Boolean(scene?.spheres.has(link.target)), placed: Boolean(link.direction) })),
       };
     });
     return { ...viewer, phase: disposed ? "disposed" : viewer.phase, sceneId: scene?.id ?? "", revision: scene?.revision ?? "", title: scene?.title ?? "", generation, hovered, entries, groups: scene?.groups ?? [], credits: viewer.credits ?? (viewer.active && current?.entries.get(viewer.active) ? [{ ...current.entries.get(viewer.active)!.input.credits, assetId: current.entries.get(viewer.active)!.input.asset.id }] : []), overview, warnings: scene?.warnings ?? [], renderingAvailable: viewer.renderingAvailable ?? true, unavailableReason: viewer.unavailableReason ?? null, lastError: lastError ?? viewer.lastError ?? null, view: viewer.view ?? null };
@@ -60,7 +60,7 @@ function createSceneHandle(options: LoadSceneOptions): SceneHandle & { replaceVa
     const scope = new AbortController(), candidate: Candidate = { scene, entries: new Map(), scope };
     const combined = signal ? AbortSignal.any([request.signal, signal, scope.signal]) : AbortSignal.any([request.signal, scope.signal]);
     try {
-      for (const entity of scene.panoramas.values()) {
+      for (const entity of scene.spheres.values()) {
         const radiusMeters = entity.marker.radiusMeters ?? options.markerRadiusMeters();
         if (!Number.isFinite(radiusMeters) || radiusMeters <= 0) throw new Error("The host orb radius must be positive metres.");
         const placement = options.world.resolvePlacement(entity, { radiusMeters });
@@ -158,8 +158,8 @@ function createSceneHandle(options: LoadSceneOptions): SceneHandle & { replaceVa
     const entry = published.entries.get(sourceId) ?? null;
     if (!entry) return failed("unavailable", "The source panorama is unavailable.");
     try {
-      const result = await options.externalNavigation.navigate({ destination: { ...destination }, panoramaId: link.target,
-        source: { sceneId: published.scene.id, revision: published.scene.revision, panoramaId: entry.record.id }, link,
+      const result = await options.externalNavigation.navigate({ destination: { ...destination }, sphereId: link.target,
+        source: { sceneId: published.scene.id, revision: published.scene.revision, sphereId: entry.record.id }, link,
         signal });
       if (signal.aborted) return failed("cancelled", "Following was cancelled.");
       if (!result.ok && result.reason !== "cancelled") { lastError = result.message; emit(); }

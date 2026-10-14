@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { composeScenes, builtInSceneCompositionOwners } from "@foss-earth/scenes/composition-node";
 import { validateScene } from "@foss-earth/scenes";
 import { loadScene } from "@foss-earth/scenes/browser";
-import { validateViewerAsset } from "@foss-earth/360";
+import { validateViewerAsset } from "@foss-earth/image-viewer";
 import { createCompositionFixture } from "./release-composition.fixture.mjs";
 
 const fixture = createCompositionFixture(), west = fixture.documents.get("west"), east = fixture.documents.get("east");
@@ -27,6 +27,6 @@ const result = await loadScene(west, { ...validation, sessionId: "installed-exte
   viewer: { prepare: async input => ({ id: input.id, ready: async () => {}, updatePlacement() {}, hover() {}, dispose() {} }), replaceImages() {}, enter: async id => { status = { phase: "immersive", active: id, target: null }; return true; }, exit() {}, status: () => status, subscribe: () => () => {}, pick: () => [], hover() {} },
   externalNavigation: { navigate: async input => { received = input; return { ok: true }; } } });
 assert.equal(result.ok, true); await result.handle.whenSettled(); await result.handle.enter("a-1");
-assert.deepEqual(await result.handle.follow(metadata.id), { ok: true }); assert.equal(received.destination.routeId, "east-route"); assert.equal(received.panoramaId, "b-1"); assert.equal(received.source.panoramaId, "a-1"); assert.deepEqual(received.link.arrivalView, metadata.arrivalView);
+assert.deepEqual(await result.handle.follow(metadata.id), { ok: true }); assert.equal(received.destination.routeId, "east-route"); assert.equal(received.sphereId, "b-1"); assert.equal(received.source.sphereId, "a-1"); assert.deepEqual(received.link.arrivalView, metadata.arrivalView);
 result.handle.dispose(); await result.handle.whenSettled();
 process.stdout.write("Installed Scenes external navigation, authored link consumption/order and mixed-group replacement passed.\n");

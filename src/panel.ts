@@ -59,9 +59,9 @@ export function createScenesPanel(options: { document: Document; controller: Sce
     if (state.errors.length > 12) messages.append(note(`and ${state.errors.length - 12} more problems.`));
   }
   function renderScene(status: SceneStatus | null): void {
-    const expanded = new Set([...sceneBlock.querySelectorAll<HTMLDetailsElement>("details[open][data-panorama]")].map(node => node.dataset.panorama));
+    const expanded = new Set([...sceneBlock.querySelectorAll<HTMLDetailsElement>("details[open][data-sphere]")].map(node => node.dataset.sphere));
     const active = document.activeElement;
-    const focused = active?.tagName === "BUTTON" && sceneBlock.contains(active) ? (active as HTMLButtonElement).dataset.panorama : undefined;
+    const focused = active?.tagName === "BUTTON" && sceneBlock.contains(active) ? (active as HTMLButtonElement).dataset.sphere : undefined;
     sceneBlock.replaceChildren(); credits.replaceChildren();
     if (!status || status.phase === "disposed") { sceneBlock.append(note("No scene is loaded.")); credits.append(note("Nothing from a scene is on screen.")); return; }
     const heading = row(status.title); heading.append(note(`${PHASE_TEXT[status.phase]}. ${status.entries.length} ${status.entries.length === 1 ? "entity" : "entities"}, revision ${status.revision}.`));
@@ -73,11 +73,11 @@ export function createScenesPanel(options: { document: Document; controller: Sce
     heading.append(button("Unload", () => controller.unload(), "Removes the scene and everything it loaded.")); if (status.lastError) heading.append(note(status.lastError)); sceneBlock.append(heading);
     const list = row("Panoramas");
     for (const entry of status.entries) {
-      const item = el("details", "foss-earth-scene-entry"), summary = el("summary", "foss-earth-scene-entry__summary"); item.dataset.panorama = entry.id; item.open = expanded.has(entry.id);
-      const enter = button(entry.title, () => { void controller.handle()?.enter(entry.id); }, entry.supported ? `Enter ${entry.title}` : entry.message ?? undefined); enter.dataset.panorama = entry.id; enter.disabled = !entry.supported || !status.renderingAvailable || status.active === entry.id;
+      const item = el("details", "foss-earth-scene-entry"), summary = el("summary", "foss-earth-scene-entry__summary"); item.dataset.sphere = entry.id; item.open = expanded.has(entry.id);
+      const enter = button(entry.title, () => { void controller.handle()?.enter(entry.id); }, entry.supported ? `Enter ${entry.title}` : entry.message ?? undefined); enter.dataset.sphere = entry.id; enter.disabled = !entry.supported || !status.renderingAvailable || status.active === entry.id;
       summary.append(enter, el("span", "foss-earth-scene-entry__state", entryState(entry, status))); item.append(summary); for (const line of details(entry)) item.append(note(line)); list.append(item);
     }
-    sceneBlock.append(list); if (focused) [...list.querySelectorAll<HTMLButtonElement>("button[data-panorama]")].find(node => node.dataset.panorama === focused)?.focus({ preventScroll: true });
+    sceneBlock.append(list); if (focused) [...list.querySelectorAll<HTMLButtonElement>("button[data-sphere]")].find(node => node.dataset.sphere === focused)?.focus({ preventScroll: true });
     for (const group of status.groups) {
       const groupRow = row(group.title);
       for (const member of group.members) { const entry = status.entries.find(item => item.id === member), go = button(entry?.title ?? member, () => { void controller.handle()?.enter(member); }); go.disabled = !entry?.supported || !status.renderingAvailable; groupRow.append(go); }

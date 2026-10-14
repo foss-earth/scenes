@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "vitest";
 import { composeSceneDocuments } from "../src/composition.ts";
 import { builtInSceneCompositionOwners, composeScenes } from "../node/composition.mjs";
-import { validateViewerAsset } from "@foss-earth/360";
+import { validateViewerAsset } from "@foss-earth/image-viewer";
 import { createNodePreviewSheetsCompositionOwner } from "@foss-earth/preview-sheets/composition-node";
 import { PREVIEW_SHEETS_EXTENSION } from "@foss-earth/preview-sheets";
 import { createCompositionFixture, assertCompositionResult, sha256 } from "../fixtures/composition/release-composition.fixture.mjs";
@@ -46,7 +46,7 @@ describe("checked public scene composition", () => {
   it("rejects a cross-child link colliding with an existing source link", () => { const f = createCompositionFixture(); f.request.links[0].from.id = "a-1"; f.request.links[0].link.id = "local"; failure(f, "collision"); });
   it("rejects incomplete authored order", () => { const f = createCompositionFixture(); f.request.entityOrder.pop(); failure(f, "reference"); });
   it("rejects repeated authored order", () => { const f = createCompositionFixture(); f.request.entityOrder[0] = f.request.entityOrder[1]; failure(f, "collision"); });
-  it("rejects omitted groups and missing initial panorama", () => { const f = createCompositionFixture(); f.request.groupOrder.pop(); failure(f, "reference"); const g = createCompositionFixture(); g.request.initialPanorama.id = "missing"; failure(g, "reference"); });
+  it("rejects omitted groups and missing initial sphere", () => { const f = createCompositionFixture(); f.request.groupOrder.pop(); failure(f, "reference"); const g = createCompositionFixture(); g.request.initialPanorama.id = "missing"; failure(g, "reference"); });
   it("does not use a parent or manifest URL instead of the declared media base", () => { const f = createCompositionFixture(); f.request.children[0].media.baseUrl = "https://wrong.example/parent/scene.json"; const index = f.indices.get("west"); index.files[0].url = "faces/px.png"; f.repin("west"); failure(f, "missing-input"); });
   it("rejects a representation composer that leaves relative URLs", () => {
     const f = createCompositionFixture(), representations = builtInSceneCompositionOwners().map(owner => owner.projection === "cube" ? { ...owner, compose: record => record } : owner);

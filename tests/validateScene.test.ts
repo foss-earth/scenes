@@ -32,9 +32,9 @@ describe("the v1 scene envelope with supplied owners", () => {
     const result = validateScene(document, options); expect(result.ok).toBe(true); if (!result.ok) return;
     expect(result.scene.entityOrder).toEqual(["garden", "courtyard"]);
     expect(result.scene.groups[0].members).toEqual(["garden", "courtyard"]);
-    expect(result.scene.panoramas.get("garden")?.capture.height).toBeNull();
-    expect(result.scene.panoramas.get("garden")?.imagePose.aligned).toBe(false);
-    expect(result.scene.panoramas.get("courtyard")?.capture.height).toEqual({ meters: 2, datum: "WGS84-ellipsoid", source: "synthetic fixture" });
+    expect(result.scene.spheres.get("garden")?.capture.height).toBeNull();
+    expect(result.scene.spheres.get("garden")?.imagePose.aligned).toBe(false);
+    expect(result.scene.spheres.get("courtyard")?.capture.height).toEqual({ meters: 2, datum: "WGS84-ellipsoid", source: "synthetic fixture" });
     expect(result.scene.baseUrl).toBe(baseUrl);
   });
   it("refuses versions and byte/count limits before invoking a representation owner", () => {

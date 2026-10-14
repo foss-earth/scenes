@@ -4,7 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { encodePng } from "@foss-earth/images/node";
-import { CUBE_FACE_NAMES } from "@foss-earth/cubemap/core";
+import { CUBE_FACE_NAMES } from "@foss-earth/sphere-cubemap/core";
 import { addPreviewSheets, PREVIEW_SHEETS_EXTENSION, sheetsOf, verifyPreviewSheets } from "@foss-earth/preview-sheets/preparation";
 import { buildScenePreviewSheets } from "../node/preview-sheets.mjs";
 import { checkSceneManifest } from "../node/scene-check.mjs";

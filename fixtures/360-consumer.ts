@@ -1,7 +1,7 @@
 import { validateScene } from "@foss-earth/scenes";
 import { loadScene, type SceneViewerPorts, type SceneViewerImageInput, type SceneViewerImageDetail, type SceneStatus, type SceneWorldPorts } from "@foss-earth/scenes/browser";
-import { createBuiltInRepresentations, validateViewerAsset, type ImageViewer, type ViewerImageInput, type ViewerImageDetail } from "@foss-earth/360";
-import { createImageViewer, type ImageViewerOptions } from "@foss-earth/360/viewer";
+import { createBuiltInRepresentations, validateViewerAsset, type ImageViewer, type ViewerImageInput, type ViewerImageDetail } from "@foss-earth/image-viewer";
+import { createImageViewer, type ImageViewerOptions } from "@foss-earth/image-viewer/viewer";
 import { createPreviewSheetsExtensionHook } from "@foss-earth/preview-sheets/scene-extension";
 declare const imageViewer: ImageViewer;
 declare const world: SceneWorldPorts;

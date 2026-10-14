@@ -2,7 +2,7 @@
 import { existsSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { addPreviewSheets, SHEET_PIXELS, sheetsOf } from "@foss-earth/preview-sheets/preparation";
-import { cubeRepresentation } from "@foss-earth/cubemap";
+import { cubeRepresentation } from "@foss-earth/sphere-cubemap";
 
 const within = (folder, file) => {
   const relative = path.relative(folder, file);

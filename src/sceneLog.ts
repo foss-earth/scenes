@@ -170,11 +170,11 @@ export function connectSceneLog(controller: SceneLogController, log: Pick<GameLo
   }));
   watch(() => controller.onFailure(failure => {
     if (disposed) return;
-    if (failure.kind !== "preview" || !failure.panorama) {
+    if (failure.kind !== "preview" || !failure.sphere) {
       log.print({ text: failure.message, tone: "error" });
       return;
     }
-    previews.add(failure.panorama.id);
+    previews.add(failure.sphere.id);
     previewFailureLine?.remove();
     previewFailureLine = log.print({
       text: previews.size === 1 ? failure.message : `The previews of ${previews.size} panoramas could not be loaded. The latest, ${failure.message}`,

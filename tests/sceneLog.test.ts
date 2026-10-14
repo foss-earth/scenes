@@ -74,7 +74,7 @@ function status(states: SceneEntryStatus["preview"][]): SceneStatus {
 const download: SceneProgress = { id: "p0/preview", kind: "preview", title: "Place 0", receivedBytes: 512, totalBytes: 1024, state: "loading" };
 
 const preview = (id: string, title: string): SceneFailure => ({
-  kind: "preview", panorama: { id, title }, cause: "Failed to fetch",
+  kind: "preview", sphere: { id, title }, cause: "Failed to fetch",
   message: `${title}: its preview could not be loaded: Failed to fetch.`,
 });
 
@@ -107,7 +107,7 @@ describe("the scene log", () => {
     const controller = { subscribe(listener: (state: SceneControllerState) => void) { listener({ loading: "https://host.example/scene.json", errors: [], status: null }); return stop; }, onProgress() { throw failure; }, onFailure: vi.fn() };
     expect(() => connectSceneLog(controller, log)).toThrow(AggregateError); expect(stop).toHaveBeenCalledOnce(); expect(log.entries()).toHaveLength(0); expect(controller.onFailure).not.toHaveBeenCalled();
   });
-  it("reports an unavailable panorama renderer once, without requiring the Scenes tab", () => {
+  it("reports an unavailable sphere renderer once, without requiring the Scenes tab", () => {
     const log = fakeLog();
     const { controller, show } = fakeController();
     connectSceneLog(controller, log);
@@ -156,7 +156,7 @@ describe("the scene log", () => {
     expect(log.entries()).toHaveLength(0);
   });
 
-  it("removes completed images after the configured duration even in open history while other panoramas keep downloading", () => {
+  it("removes completed images after the configured duration even in open history while other spheres keep downloading", () => {
     vi.useFakeTimers();
     const settings = createSettingsRegistry({ storage: null });
     settings.register(FOSS_EARTH_PARAMETERS);
@@ -236,11 +236,11 @@ describe("the scene log", () => {
     expect(log.entries()).toHaveLength(1);
   });
 
-  it("prints each failure as an error, and counts the panoramas whose previews failed on one line", () => {
+  it("prints each failure as an error, and counts the spheres whose previews failed on one line", () => {
     const log = fakeLog();
     const { controller, loading, fail } = fakeController();
     connectSceneLog(controller, log);
-    fail({ kind: "image", panorama: { id: "mall", title: "Mall" }, cause: "x", message: "Mall: the 6144 px image could not be loaded." });
+    fail({ kind: "image", sphere: { id: "mall", title: "Mall" }, cause: "x", message: "Mall: the 6144 px image could not be loaded." });
     fail(preview("mall", "Mall"));
     fail(preview("walter", "Walter"));
     fail(preview("mall", "Mall"));

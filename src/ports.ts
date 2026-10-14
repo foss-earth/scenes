@@ -1,11 +1,11 @@
 import type { ImageAsset, ImageAttribution, ImagePose, Mat3, Vec3 } from "@foss-earth/images";
-import type { ExternalDestinationRecord, LinkRecord, OverviewRecord, ResolvedPanorama, SceneDiagnostic, ValidatedScene, ViewRecord } from "./format.js";
+import type { ExternalDestinationRecord, LinkRecord, OverviewRecord, ResolvedSphere, SceneDiagnostic, ValidatedScene, ViewRecord } from "./format.js";
 import type { SceneInput, ResolveSceneInputOptions } from "./manifest.js";
 import type { SceneHistoryAdapter } from "./history.js";
 
 export type ScenePhase = "overview" | "preparing" | "entering" | "immersive" | "exiting" | "disposed";
 export type SceneActionResult = { ok: true } | { ok: false; reason: "disposed" | "busy" | "cancelled" | "unavailable" | "failed"; message: string };
-export interface SceneFailure { kind: "scene" | "preview" | "navigation" | "image"; panorama: { id: string; title: string } | null; cause: string; message: string }
+export interface SceneFailure { kind: "scene" | "preview" | "navigation" | "image"; sphere: { id: string; title: string } | null; cause: string; message: string }
 /** Structural match for the public 360 input. No entity resolver crosses this boundary. */
 export interface SceneViewerImageInput {
   id: string; asset: ImageAsset; pose: ImagePose & { aligned?: boolean };
@@ -50,8 +50,8 @@ export interface ScenePlacement {
 }
 /** Geographic calculations, displayed-ground availability and camera momentum remain host-owned. */
 export interface SceneWorldPorts {
-  resolvePlacement(entity: ResolvedPanorama, options: { radiusMeters: number }): ScenePlacement;
-  watchPlacement?(entity: ResolvedPanorama, options: { radiusMeters: number }, changed: (placement: ScenePlacement) => void): () => void;
+  resolvePlacement(entity: ResolvedSphere, options: { radiusMeters: number }): ScenePlacement;
+  watchPlacement?(entity: ResolvedSphere, options: { radiusMeters: number }, changed: (placement: ScenePlacement) => void): () => void;
   showOverview(overview: OverviewRecord, options: { signal?: AbortSignal }): Promise<{ ok: true; state: "pending" | "applied" } | Exclude<SceneActionResult, { ok: true }>>;
 }
 export interface SceneEntryStatus {
@@ -94,9 +94,9 @@ export interface SceneHandle {
   dispose(): void;
 }
 export interface SceneExternalNavigationPorts {
-  /** The host maps its declared scene/route and named panorama. Scenes fetches nothing. */
-  navigate(input: { destination: ExternalDestinationRecord; panoramaId: string;
-    source: { sceneId: string; revision: string; panoramaId: string };
+  /** The host maps its declared scene/route and named sphere. Scenes fetches nothing. */
+  navigate(input: { destination: ExternalDestinationRecord; sphereId: string;
+    source: { sceneId: string; revision: string; sphereId: string };
     link: LinkRecord; signal: AbortSignal }): Promise<SceneActionResult>;
 }
 export interface LoadSceneOptions extends ResolveSceneInputOptions {

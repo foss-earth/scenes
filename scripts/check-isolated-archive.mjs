@@ -11,7 +11,7 @@ assert.ok(args.archives && /^[a-f0-9]{64}$/.test(args["archives-sha256"] ?? ""),
 const closurePath = path.resolve(args.archives), closureBytes = readFileSync(closurePath);
 assert.equal(createHash("sha256").update(closureBytes).digest("hex"), args["archives-sha256"]);
 const closure = JSON.parse(closureBytes); assert.equal(closure.schemaVersion, 1); assert.ok(Array.isArray(closure.packages) && closure.packages.length > 0);
-const required = ["@foss-earth/scenes", "@foss-earth/images", "@foss-earth/360", "@foss-earth/tiled-cubemap", "@foss-earth/preview-sheets", "@foss-earth/cubemap", "@foss-earth/equirectangular", "@foss-earth/ui", "jpeg-js", "jsdom", "typescript", "@types/node", "undici-types"];
+const required = ["@foss-earth/scenes", "@foss-earth/images", "@foss-earth/image-viewer", "@foss-earth/sphere-tiled-cubemap", "@foss-earth/preview-sheets", "@foss-earth/sphere-cubemap", "@foss-earth/sphere-equirectangular", "@foss-earth/ui", "jpeg-js", "jsdom", "typescript", "@types/node", "undici-types"];
 const pins = {}, dependencies = {};
 for (const entry of closure.packages) {
   assert.ok(entry.name && entry.version && entry.archive && /^[a-f0-9]{64}$/.test(entry.sha256 ?? ""), "Every closure package needs name, version, archive and exact sha256");

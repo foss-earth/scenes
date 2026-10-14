@@ -1,6 +1,6 @@
 import { ImageRecordChecker, isRecord, type ImageAsset, type ImageRepresentation, type RepresentationHooks } from "@foss-earth/images";
-import { SCENE_FORMAT, SCENE_FORMAT_VERSION, type SceneDiagnostic, type SceneValidation, type ResolvedAsset, type ResolvedPanorama, type UnsupportedEntity, type GroupRecord, type ExternalDestinationRecord } from "./format.js";
-import { checkAttribution, checkOverview, checkPanorama, checkSceneMarkerStyle } from "./envelopeChecks.js";
+import { SCENE_FORMAT, SCENE_FORMAT_VERSION, type SceneDiagnostic, type SceneValidation, type ResolvedAsset, type ResolvedSphere, type UnsupportedEntity, type GroupRecord, type ExternalDestinationRecord } from "./format.js";
+import { checkAttribution, checkOverview, checkSphere, checkSceneMarkerStyle } from "./envelopeChecks.js";
 
 export interface SceneLimits { manifestBytes: number; entities: number; assets: number; links: number }
 export const DEFAULT_SCENE_LIMITS: Readonly<SceneLimits> = Object.freeze({ manifestBytes: 2 * 1024 * 1024, entities: 2000, assets: 2000, links: 10000 });
@@ -134,7 +134,7 @@ export function validateScene(input: unknown, options: ValidateSceneOptions): Sc
     checker.errors.push(...options.validateImageAsset(asset, { path })); assets.set(assetId, asset);
   });
 
-  const panoramas = new Map<string, ResolvedPanorama>(), unsupported = new Map<string, UnsupportedEntity>(), entityPaths = new Map<string, string>(), entityOrder: string[] = [];
+  const spheres = new Map<string, ResolvedSphere>(), unsupported = new Map<string, UnsupportedEntity>(), entityPaths = new Map<string, string>(), entityOrder: string[] = [];
   (checker.array(root.entities, "$.entities") ?? []).forEach((entry, index) => {
     const path = `$.entities[${index}]`, record = checker.record(entry, path);
     if (!record) return;
@@ -148,24 +148,24 @@ export function validateScene(input: unknown, options: ValidateSceneOptions): Sc
       else { checker.warn(`${path}.type`, `entity type "${type}" is not supported; it is listed but not shown`); unsupported.set(entityId, { id: entityId, type, reason: `This loader does not show "${type}" entities.` }); }
       return;
     }
-    const panorama = checkPanorama(checker, record, path, sceneStyle);
-    if (!panorama) return;
-    if (!assets.has(panorama.assetId)) {
-      if (unsupportedAssets.has(panorama.assetId)) {
-        const reason = `Its asset "${panorama.assetId}" is a "${unsupportedAssets.get(panorama.assetId)}", which this loader does not show.`;
-        if (panorama.required) checker.fail(`${path}.assetId`, reason); else unsupported.set(panorama.id, { id: panorama.id, type: "panorama", reason });
-      } else checker.fail(`${path}.assetId`, `refers to asset "${panorama.assetId}", which the scene does not define`);
+    const sphere = checkSphere(checker, record, path, sceneStyle);
+    if (!sphere) return;
+    if (!assets.has(sphere.assetId)) {
+      if (unsupportedAssets.has(sphere.assetId)) {
+        const reason = `Its asset "${sphere.assetId}" is a "${unsupportedAssets.get(sphere.assetId)}", which this loader does not show.`;
+        if (sphere.required) checker.fail(`${path}.assetId`, reason); else unsupported.set(sphere.id, { id: sphere.id, type: "panorama", reason });
+      } else checker.fail(`${path}.assetId`, `refers to asset "${sphere.assetId}", which the scene does not define`);
       return;
     }
-    panoramas.set(panorama.id, panorama);
+    spheres.set(sphere.id, sphere);
   });
-  for (const panorama of panoramas.values()) panorama.links.forEach((link, index) => {
+  for (const sphere of spheres.values()) sphere.links.forEach((link, index) => {
     if (link.externalDestination !== undefined) {
-      if (!externalDestinations.has(link.externalDestination)) checker.fail(`${entityPaths.get(panorama.id)!}.links[${index}].externalDestination`, "names no declared external destination");
+      if (!externalDestinations.has(link.externalDestination)) checker.fail(`${entityPaths.get(sphere.id)!}.links[${index}].externalDestination`, "names no declared external destination");
       return;
     }
-    if (panoramas.has(link.target)) return;
-    const path = `${entityPaths.get(panorama.id)!}.links[${index}].target`;
+    if (spheres.has(link.target)) return;
+    const path = `${entityPaths.get(sphere.id)!}.links[${index}].target`;
     if (unsupported.has(link.target)) checker.warn(path, `leads to "${link.target}", which is not supported; the link is listed disabled`);
     else checker.fail(path, `leads to "${link.target}", which is not a panorama in this scene`);
   });
@@ -188,8 +188,8 @@ export function validateScene(input: unknown, options: ValidateSceneOptions): Sc
     });
   }
   let initialPanorama: string | null = null;
-  if (root.initialPanorama !== undefined) { const initial = checker.id(root.initialPanorama, "$.initialPanorama"); if (initial && !panoramas.has(initial)) checker.fail("$.initialPanorama", `names "${initial}", which is not a supported panorama of this scene`); else initialPanorama = initial; }
+  if (root.initialPanorama !== undefined) { const initial = checker.id(root.initialPanorama, "$.initialPanorama"); if (initial && !spheres.has(initial)) checker.fail("$.initialPanorama", `names "${initial}", which is not a supported panorama of this scene`); else initialPanorama = initial; }
   const overview = root.overview === undefined ? null : checkOverview(checker, root.overview, "$.overview");
   if (checker.errors.length || !id || !revision || !title) return { ok: false, errors: checker.errors };
-  return { ok: true, scene: { format: SCENE_FORMAT, version: SCENE_FORMAT_VERSION, id, revision, title, baseUrl: base?.href ?? null, assets, extensionData, panoramas, entityOrder, unsupported, groups, externalDestinations, initialPanorama, overview, extensions, warnings: checker.warnings, manifestBytes } };
+  return { ok: true, scene: { format: SCENE_FORMAT, version: SCENE_FORMAT_VERSION, id, revision, title, baseUrl: base?.href ?? null, assets, extensionData, spheres, entityOrder, unsupported, groups, externalDestinations, initialPanorama, overview, extensions, warnings: checker.warnings, manifestBytes } };
 }

@@ -43,7 +43,7 @@ describe("declared standalone external navigation", () => {
     const h = host(), navigate = vi.fn(async () => ({ ok: true as const })); h.options.externalNavigation = { navigate };
     const result = await loadScene(document(), h.options); if (!result.ok) throw Error("fixture");
     await result.handle.whenSettled(); await result.handle.enter("garden"); expect(await result.handle.follow("external")).toEqual({ ok: true });
-    expect(navigate).toHaveBeenCalledWith(expect.objectContaining({ destination: { id: "other-tour", sceneId: "other-scene", routeId: "other-route" }, panoramaId: "named-stop", source: { sceneId: "neutral-garden", revision: expect.any(String), panoramaId: "garden" }, link: expect.objectContaining({ id: "external", direction: { headingDeg: 35, pitchDeg: 2 }, arrivalView: { headingDeg: 9, pitchDeg: -1, verticalFovDeg: 65 } }), signal: expect.any(AbortSignal) }));
+    expect(navigate).toHaveBeenCalledWith(expect.objectContaining({ destination: { id: "other-tour", sceneId: "other-scene", routeId: "other-route" }, sphereId: "named-stop", source: { sceneId: "neutral-garden", revision: expect.any(String), sphereId: "garden" }, link: expect.objectContaining({ id: "external", direction: { headingDeg: 35, pitchDeg: 2 }, arrivalView: { headingDeg: 9, pitchDeg: -1, verticalFovDeg: 65 } }), signal: expect.any(AbortSignal) }));
     expect(result.handle.hotspots().some(item => item.id === "external")).toBe(true);
     expect(await h.inputs[0]!.actions.at(-1)!.activate()).toBe(true); result.handle.dispose();
   });

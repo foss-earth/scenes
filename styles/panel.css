@@ -52,7 +52,7 @@
   opacity: 0.72;
 }
 
-/* Link buttons sit where their direction is in the panorama. */
+/* Link buttons sit where their direction is in the sphere. */
 .foss-earth-scene-hotspots {
   position: absolute;
   inset: 0;

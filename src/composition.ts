@@ -294,7 +294,7 @@ export function composeSceneDocuments(input: SceneCompositionRequest, options: S
     // Optional runtime fallback is useful for viewing, but must not discard authored media in a build.
     const discarded = result.scene.warnings.filter(warning => warning.path.includes(".extensions.") || warning.path.includes(".representations") || warning.path.endsWith(".assetId"));
     if (discarded.length) fail("invalid-scene", path, discarded.map(error => `${error.path}: ${error.message}`).join("; "));
-    for (const entity of result.scene.panoramas.values()) for (const link of entity.links) if (!link.externalDestination && !result.scene.panoramas.has(link.target)) fail("reference", path, `link ${entity.id}/${link.id} targets an unsupported entity`);
+    for (const entity of result.scene.spheres.values()) for (const link of entity.links) if (!link.externalDestination && !result.scene.spheres.has(link.target)) fail("reference", path, `link ${entity.id}/${link.id} targets an unsupported entity`);
     return result.scene;
   };
   const children = new Map<string, ChildState>();
@@ -349,7 +349,7 @@ export function composeSceneDocuments(input: SceneCompositionRequest, options: S
     }
     for (const [at, group] of asArray(document.groups ?? [], `${path}.document.groups`).entries()) inspectExtensions(asRecord(group, `${path}.document.groups[${at}]`), `${path}.document.groups[${at}]`);
     const validated = validate(document, media.baseUrl, `${path}.document`);
-    totals.links += [...validated.panoramas.values()].reduce((sum, panorama) => sum + panorama.links.length, 0); bounded(totals.links, "links", path);
+    totals.links += [...validated.spheres.values()].reduce((sum, sphere) => sum + sphere.links.length, 0); bounded(totals.links, "links", path);
     const ids: ChildState["ids"] = { assets: new Map(), entities: new Map(), groups: new Map() };
     const context: SceneCompositionChildContext = { key, baseUrl: media.baseUrl, resolveId(kind, id) { const output = ids[kind].get(id); return output ?? fail("reference", `${path}.${kind}`, `unknown ${kind} ID ${id}`); } };
     children.set(key, { pin: { key, manifest, media, ...(record.aliases === undefined ? {} : { aliases: record.aliases as SceneCompositionChild["aliases"] }) }, document, validated, media: localMedia, ids, context });
@@ -504,11 +504,11 @@ export function composeSceneDocuments(input: SceneCompositionRequest, options: S
       rewriteExtensions(group, "group", child, `$children.${child.pin.key}.groups.${originalId}`); groupRecords.set(group.id as string, group);
     }
   }
-  const reference = (value: unknown, kind: SceneCompositionIdKind, path: string, panorama = false): { id: string; child: ChildState } => {
+  const reference = (value: unknown, kind: SceneCompositionIdKind, path: string, sphere = false): { id: string; child: ChildState } => {
     const record = asRecord(value, path); keys(record, ["child", "id"], path);
     const child = children.get(record.child as string) ?? fail("reference", path, "unknown child");
     const id = child.context.resolveId(kind, identifier(record.id, `${path}.id`));
-    if (panorama && !child.validated.panoramas.has(record.id as string)) fail("reference", path, "must refer to a supported panorama");
+    if (sphere && !child.validated.spheres.has(record.id as string)) fail("reference", path, "must refer to a supported panorama");
     return { id, child };
   };
   const linkMappings: SceneCompositionResult["provenance"]["linkMappings"][number][] = [];
@@ -523,7 +523,7 @@ export function composeSceneDocuments(input: SceneCompositionRequest, options: S
       const consume = identifier(record.consume, `${path}.consume`);
       if (consume !== id) fail("collision", `${path}.consume`, "must retain the consumed link identity");
       const sourceId = asRecord(record.from, `${path}.from`).id as string;
-      const raw = from.child.validated.panoramas.get(sourceId)!.links.find(entry => entry.id === consume);
+      const raw = from.child.validated.spheres.get(sourceId)!.links.find(entry => entry.id === consume);
       if (!raw?.externalDestination) fail("reference", `${path}.consume`, "must name an existing declared external link");
       const destination = from.child.validated.externalDestinations?.get(raw.externalDestination);
       if (!destination || destination.sceneId !== to.child.pin.manifest.id || raw.target !== asRecord(record.to, `${path}.to`).id) fail("reference", `${path}.to`, "must map the original declared destination and named panorama");

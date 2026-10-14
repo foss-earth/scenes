@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { encodePng } from "@foss-earth/images/node";
-import { CUBE_FACE_NAMES } from "@foss-earth/cubemap/core";
+import { CUBE_FACE_NAMES } from "@foss-earth/sphere-cubemap/core";
 import { PREVIEW_SHEETS_EXTENSION, sheetFaceRectangles } from "@foss-earth/preview-sheets";
 import { createNodePreviewSheetsCompositionOwner } from "@foss-earth/preview-sheets/composition-node";
 

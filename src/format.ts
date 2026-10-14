@@ -5,7 +5,7 @@ export const SCENE_FORMAT_VERSION = 1;
 export type SceneExtensions = ImageExtensions;
 export type AttributionRecord = ImageAttribution;
 export type SceneDiagnostic = ImageDiagnostic;
-export type PanoramaAssetRecord<R extends ImageRepresentation = ImageRepresentation> = ImageAsset<R>;
+export type SphereAssetRecord<R extends ImageRepresentation = ImageRepresentation> = ImageAsset<R>;
 export type ResolvedAsset<R extends ImageRepresentation = ImageRepresentation> = ImageAsset<R>;
 export interface HeightRecord {
   /** Metres above the WGS84 ellipsoid. */
@@ -76,17 +76,17 @@ export interface ExternalDestinationRecord { id: string; sceneId: string; routeI
 export interface LinkRecord {
   id: string;
   target: string;
-  /** When present, target is a named panorama in this declared external scene. */
+  /** When present, target is a named sphere in this declared external scene. */
   externalDestination?: string;
   label: string;
-  /** Where the hotspot sits in the source panorama's ENU view; without it the link is list-only. */
+  /** Where the hotspot sits in the source sphere's ENU view; without it the link is list-only. */
   direction?: { headingDeg: number; pitchDeg: number };
   /** Overrides the destination's initial view for this arrival. */
   arrivalView?: ViewRecord;
   extensions?: SceneExtensions;
 }
 
-export interface PanoramaEntityRecord {
+export interface SphereEntityRecord {
   id: string;
   type: "panorama";
   assetId: string;
@@ -126,8 +126,8 @@ export interface SceneDocument<R extends ImageRepresentation = ImageRepresentati
   title: string;
   requiredExtensions?: readonly string[];
   extensions?: SceneExtensions;
-  assets: readonly PanoramaAssetRecord<R>[];
-  entities: readonly (PanoramaEntityRecord | { id: string; type: string; required?: boolean })[];
+  assets: readonly SphereAssetRecord<R>[];
+  entities: readonly (SphereEntityRecord | { id: string; type: string; required?: boolean })[];
   groups?: readonly GroupRecord[];
   externalDestinations?: readonly ExternalDestinationRecord[];
   initialPanorama?: string;
@@ -136,7 +136,7 @@ export interface SceneDocument<R extends ImageRepresentation = ImageRepresentati
   markerStyle?: MarkerStyleRecord;
 }
 
-export interface ResolvedPanorama extends Omit<PanoramaEntityRecord, "links"> {
+export interface ResolvedSphere extends Omit<SphereEntityRecord, "links"> {
   links: readonly LinkRecord[];
   markerStyle: ResolvedMarkerStyle;
 }
@@ -159,7 +159,7 @@ export interface ValidatedScene<R extends ImageRepresentation = ImageRepresentat
   assets: ReadonlyMap<string, ResolvedAsset<R>>;
   /** Validated optional extension data stays opaque to the envelope owner. */
   extensionData: ReadonlyMap<string, unknown>;
-  panoramas: ReadonlyMap<string, ResolvedPanorama>;
+  spheres: ReadonlyMap<string, ResolvedSphere>;
   /** Every entity id in document order, supported or not, for the list. */
   entityOrder: readonly string[];
   unsupported: ReadonlyMap<string, UnsupportedEntity>;

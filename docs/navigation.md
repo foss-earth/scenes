@@ -27,11 +27,11 @@ Supply `LoadSceneOptions.externalNavigation` through the public browser entry:
 import type { SceneExternalNavigationPorts } from "@foss-earth/scenes/browser";
 
 const navigation: SceneExternalNavigationPorts = {
-  async navigate({ destination, panoramaId, source, link, signal }) {
+  async navigate({ destination, sphereId, source, link, signal }) {
     // Host checks its declared route registry, selects the named scene, places
     // the panorama and applies link.arrivalView. Its own transport is bounded.
     return host.selectScene({ sceneId: destination.sceneId,
-      routeId: destination.routeId, panoramaId, source,
+      routeId: destination.routeId, sphereId, source,
       view: link.arrivalView, signal });
   },
 };
