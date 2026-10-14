@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "vitest";
 import { composeSceneDocuments } from "../src/composition.ts";
 import { builtInSceneCompositionOwners, composeScenes } from "../node/composition.mjs";
-import { validateViewerAsset } from "@foss-earth/image-viewer";
+import { validateViewerAsset } from "@foss-earth/sphere-image";
 import { createNodePreviewSheetsCompositionOwner } from "@foss-earth/preview-sheets/composition-node";
 import { PREVIEW_SHEETS_EXTENSION } from "@foss-earth/preview-sheets";
 import { createCompositionFixture, assertCompositionResult, sha256 } from "../fixtures/composition/release-composition.fixture.mjs";

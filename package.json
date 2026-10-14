@@ -81,7 +81,7 @@
   },
   "dependencies": {
     "@foss-earth/images": "0.1.0",
-    "@foss-earth/image-viewer": "0.1.0",
+    "@foss-earth/sphere-image": "0.1.0",
     "@foss-earth/sphere-tiled-cubemap": "0.1.0",
     "@foss-earth/preview-sheets": "0.1.0",
     "@foss-earth/sphere-cubemap": "0.1.0"

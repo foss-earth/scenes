@@ -6,8 +6,8 @@ This package owns the scene envelope, references, authored ordering, capture, ma
 
 It works with these repositories, whose public exports a host app uses directly:
 
-- [360](https://github.com/foss-earth/360): the image viewer a scene is shown in.
-- [images](https://github.com/foss-earth/images), [preview-sheets](https://github.com/foss-earth/preview-sheets), [tiled-cubemap](https://github.com/foss-earth/tiled-cubemap) and [cubemap](https://github.com/foss-earth/cubemap): image records, preview sheets and spatial formats. No spatial representation definition or built-in catalogue lives here.
+- [sphere-image](https://github.com/foss-earth/sphere-image): the image viewer a scene is shown in.
+- [images](https://github.com/foss-earth/images), [preview-sheets](https://github.com/foss-earth/preview-sheets), [sphere-tiled-cubemap](https://github.com/foss-earth/sphere-tiled-cubemap) and [sphere-cubemap](https://github.com/foss-earth/sphere-cubemap): image records, preview sheets and spatial formats. No spatial representation definition or built-in catalogue lives here.
 - [ui](https://github.com/foss-earth/ui): shared panel and settings surface (optional peer).
 - The [application](https://github.com/foss-earth/foss-earth.github.io) composes them.
 

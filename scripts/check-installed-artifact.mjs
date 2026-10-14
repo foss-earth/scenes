@@ -30,7 +30,7 @@ await assert.rejects(import(pathToFileURL(outside)), /OUTSIDE_ISOLATED_WORKSPACE
 const { JSDOM } = await import(resolvePublic("jsdom")); dom = new JSDOM("<!doctype html><main></main>");
 for (const name of ["document", "window", "navigator", "fetch", "requestAnimationFrame"]) Object.defineProperty(globalThis, name, { configurable: true, get() { throw new Error(`Pure import read ${name}`); } });
 const core = await import(resolvePublic("@foss-earth/scenes")), browser = await import(resolvePublic("@foss-earth/scenes/browser")), panel = await import(resolvePublic("@foss-earth/scenes/panel"));
-const viewerCore = await import(resolvePublic("@foss-earth/image-viewer")), preview = await import(resolvePublic("@foss-earth/preview-sheets/scene-extension"));
+const viewerCore = await import(resolvePublic("@foss-earth/sphere-image")), preview = await import(resolvePublic("@foss-earth/preview-sheets/scene-extension"));
 const checker = await import(resolvePublic("@foss-earth/scenes/node")), previewDocument = await import(resolvePublic("@foss-earth/scenes/preview-sheets"));
 const composition = await import(resolvePublic("@foss-earth/scenes/composition")), compositionNode = await import(resolvePublic("@foss-earth/scenes/composition-node"));
 const compositionFixture = await import(pathToFileURL(path.join(consumer, "release-composition.fixture.mjs")));

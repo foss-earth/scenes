@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { composeScenes, builtInSceneCompositionOwners } from "@foss-earth/scenes/composition-node";
 import { validateScene } from "@foss-earth/scenes";
 import { loadScene } from "@foss-earth/scenes/browser";
-import { validateViewerAsset } from "@foss-earth/image-viewer";
+import { validateViewerAsset } from "@foss-earth/sphere-image";
 import { createCompositionFixture } from "./release-composition.fixture.mjs";
 
 const fixture = createCompositionFixture(), west = fixture.documents.get("west"), east = fixture.documents.get("east");

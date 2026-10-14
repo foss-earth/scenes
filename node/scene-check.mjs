@@ -5,7 +5,7 @@ import { checkSceneFiles as checkDeclaredFiles, validateScene } from "../dist/in
 import { createPreviewSheetsExtensionHook } from "@foss-earth/preview-sheets/scene-extension";
 import { PREVIEW_SHEETS_EXTENSION, verifyPreviewSheets } from "@foss-earth/preview-sheets/preparation";
 import { tiledCubeFilesWithLevel } from "@foss-earth/sphere-tiled-cubemap";
-import { createBuiltInRepresentations, validateViewerAsset } from "@foss-earth/image-viewer";
+import { createBuiltInRepresentations, validateViewerAsset } from "@foss-earth/sphere-image";
 
 const within = (folder, file) => { const relative = path.relative(folder, file); return relative === "" || (!relative.startsWith(`..${path.sep}`) && relative !== ".." && !path.isAbsolute(relative)); };
 /** Both decoded URL traversal and symlinks must remain inside the supplied local folder. */

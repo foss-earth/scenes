@@ -1,6 +1,6 @@
 /** Explicit byte inputs only. This adapter adds standard SHA-256 and public leaf bindings. */
 import { createHash } from "node:crypto";
-import { validateViewerAsset } from "@foss-earth/image-viewer";
+import { validateViewerAsset } from "@foss-earth/sphere-image";
 import { tiledCubeFilesWithLevel } from "@foss-earth/sphere-tiled-cubemap";
 import { createNodePreviewSheetsCompositionOwner } from "@foss-earth/preview-sheets/composition-node";
 import { builtInSceneHooks } from "./scene-check.mjs";
