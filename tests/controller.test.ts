@@ -33,6 +33,8 @@ describe("one injected app scene controller", () => {
       pointer("pointerdown", 1); pointer("pointerdown", 2); pointer("pointerup", 1); pointer("pointerup", 2);
       pointer("pointerdown", 1); pointer("pointercancel", 1); pointer("pointerup", 1); expect(mounted.enter).not.toHaveBeenCalled();
       pointer("pointerdown", 1); pointer("pointerup", 1); await controller.whenSettled(); expect(mounted.enter).toHaveBeenCalledTimes(1);
+      pointer("pointerdown", 1); controller.consumePointerPress(1); pointer("pointerup", 1); await controller.whenSettled(); expect(mounted.enter).toHaveBeenCalledTimes(1);
+      controller.consumePointerPress(99);
       controller.destroy(); pointer("pointerdown", 1); pointer("pointerup", 1); expect(mounted.enter).toHaveBeenCalledTimes(1);
     } finally { controller.destroy(); dom.window.close(); }
   });

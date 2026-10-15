@@ -8,6 +8,12 @@ export interface SceneController {
   state(): SceneControllerState; handle(): SceneHandle | null;
   load(input: string, options?: { exampleId?: boolean }): Promise<boolean>;
   unload(): void;
+  /**
+   * Drops a press recorded on pointerdown so the matching pointerup does not enter a
+   * panorama. Pointerup does not look at defaultPrevented; a gesture that consumed the
+   * press, such as a long-press, has to call this before release. Unknown ids are ignored.
+   */
+  consumePointerPress(pointerId: number): void;
   subscribe(listener: (state: SceneControllerState) => void): () => void;
   onFailure(listener: (failure: SceneFailure) => void): () => void;
   onProgress(listener: (progress: SceneProgress) => void): () => void;
@@ -101,6 +107,7 @@ export function createSceneController(options: SceneControllerOptions): SceneCon
   const onAbort = (): void => unload(); options.signal?.addEventListener("abort", onAbort, { once: true });
   return {
     examples, state: () => state, handle: () => current, load, unload,
+    consumePointerPress(pointerId) { presses.delete(pointerId); if (!presses.size) multiTouch = false; },
     subscribe(listener) { if (!destroyed) { listeners.add(listener); listener(state); } return () => { listeners.delete(listener); }; },
     onFailure(listener) { if (!destroyed) failureListeners.add(listener); return () => { failureListeners.delete(listener); }; },
     onProgress(listener) { if (!destroyed) progressListeners.add(listener); return () => { progressListeners.delete(listener); }; },

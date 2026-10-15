@@ -15,4 +15,6 @@ export interface SceneCheckReport {
 export function builtInSceneHooks(): readonly RepresentationHooks[];
 export function localSceneReader(folder: string, baseUrl: string | URL): { outside: Set<string>; read(url: string): Uint8Array | null };
 export function checkSceneFiles(scene: ValidatedScene, read: (url: string) => Uint8Array | null, representations?: readonly RepresentationHooks[]): SceneFileReport;
+/** Checks a scene document and does not read its media files. */
+export function validateSceneDocument(manifestText: string, options?: { baseUrl?: string | URL }): { ok: boolean; errors: readonly ImageDiagnostic[]; scene?: ValidatedScene };
 export function checkSceneManifest(manifestPath: string, options?: { baseUrl?: string | URL }): SceneCheckReport;

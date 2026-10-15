@@ -6,7 +6,7 @@ function setup() {
   const dom = new JSDOM("<main></main>"), document = dom.window.document;
   const listeners = new Set<(state: SceneControllerState) => void>(), frames = new Set<() => void>();
   let state: SceneControllerState = { loading: null, errors: [], status: null }, active: SceneHandle | null = null;
-  const controller: SceneController = { examples: [{ id: "tour", title: "Host tour", description: "Explicit host scene", url: "tour.json" }], state: () => state, handle: () => active, load: vi.fn(async () => true), unload: vi.fn(), subscribe(listener) { listeners.add(listener); listener(state); return () => { listeners.delete(listener); }; }, onFailure: () => () => {}, onProgress: () => () => {}, whenSettled: async () => {}, destroy() {} };
+  const controller: SceneController = { examples: [{ id: "tour", title: "Host tour", description: "Explicit host scene", url: "tour.json" }], state: () => state, handle: () => active, load: vi.fn(async () => true), unload: vi.fn(), consumePointerPress: vi.fn(), subscribe(listener) { listeners.add(listener); listener(state); return () => { listeners.delete(listener); }; }, onFailure: () => () => {}, onProgress: () => () => {}, whenSettled: async () => {}, destroy() {} };
   const sections: ScenePanelSection[] = [], destroys: string[] = [];
   const ui = {
     parameterSection(options: { section: string; main: HTMLElement }) { return { element: options.main, destroy() { destroys.push(options.section); } }; },

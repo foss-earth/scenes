@@ -74,7 +74,7 @@ The 360 binding owns input, transitions and active-image detail. The host wires 
 
 ## Controller and panel
 
-The app controller loads explicit URLs or registered example IDs, cancels old loads, cleans up stale successful handles, and applies source click and tap rules using an injected drag threshold. It does not handle gestures, keyboard controls or shareable arbitrary URLs.
+The app controller loads explicit URLs or registered example IDs, cancels old loads, cleans up stale successful handles, and applies source click and tap rules using an injected drag threshold. It does not handle gestures, keyboard controls or shareable arbitrary URLs. A press is recorded on pointerdown and enters on pointerup without consulting `defaultPrevented`. `consumePointerPress(pointerId)` drops that record so a gesture that already used the press, such as a long-press on an orb, does not also enter. It leaves no pointer id behind, and an unknown id does nothing.
 
 `./panel` needs an explicit Document and the shared UI and settings port. It provides Content, Credits, entity details, groups, unavailable entries and directional hotspot buttons. Other owners contribute the Orbs, Motion, Loading, Tiles and Saved sections at their `scenes.*` homes. The host keeps the `panorama` and `panorama-settings` tabs with 360, and the HUD and toolbar composition with their owners.
 

@@ -46,6 +46,18 @@ export function checkSceneFiles(scene, read, representations = builtInSceneHooks
   });
 }
 
+/** Manifest validation without reading local media files. */
+export function validateSceneDocument(manifestText, options = {}) {
+  const baseUrl = new URL(options.baseUrl ?? "https://scene.invalid/scene.json");
+  const text = typeof manifestText === "string" ? manifestText : JSON.stringify(manifestText);
+  return validateScene(text, {
+    baseUrl: baseUrl.href,
+    representations: builtInSceneHooks(),
+    validateImageAsset: validateViewerAsset,
+    extensionHooks: [createPreviewSheetsExtensionHook()],
+  });
+}
+
 export function checkSceneManifest(manifestPath, options = {}) {
   const baseUrl = new URL(options.baseUrl ?? `https://scene.invalid/${encodeURIComponent(path.basename(manifestPath))}`);
   // Estimates are unused during validation/file checking; explicit values avoid creating runtime budgets.

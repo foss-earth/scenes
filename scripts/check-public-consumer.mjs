@@ -12,7 +12,7 @@ assert.equal(result.ok, true); assert.deepEqual(result.scene.entityOrder, []);
 let calls = 0;
 const controller = browser.createSceneController({ examples: [], baseUrl: "https://host.example/", load() { calls += 1; throw new Error("No implicit load"); } }); controller.destroy(); assert.equal(calls, 0);
 assert.equal(typeof panel.createScenesPanel, "function"); assert.equal(typeof browser.loadScene, "function");
-assert.equal(typeof core.checkSceneFiles, "function"); assert.equal(typeof node.checkSceneManifest, "function"); assert.equal(typeof preview.buildScenePreviewSheets, "function");
+assert.equal(typeof core.checkSceneFiles, "function"); assert.equal(typeof node.checkSceneManifest, "function"); assert.equal(typeof node.validateSceneDocument, "function"); assert.equal(typeof preview.buildScenePreviewSheets, "function");
 assert.equal(core.composeSceneDocuments, composition.composeSceneDocuments);
 const composedFixture = compositionFixture.createCompositionFixture();
 compositionFixture.assertCompositionResult(compositionNode.composeScenes(composedFixture.request, { inputs: composedFixture.inputs }), composedFixture);
