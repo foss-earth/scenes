@@ -24,7 +24,7 @@ let status = { phase: "overview", active: null, target: null }, received = null;
 const result = await loadScene(west, { ...validation, sessionId: "installed-external", markerRadiusMeters: () => 1,
   world: { resolvePlacement: () => ({ state: "pending", placement: { marker: null, radiusMeters: 1, content: [[1, 0, 0], [0, 1, 0], [0, 0, 1]] } }),
     showOverview: async () => ({ ok: true, state: "pending" }) },
-  viewer: { prepare: async input => ({ id: input.id, ready: async () => {}, updatePlacement() {}, hover() {}, dispose() {} }), replaceImages() {}, enter: async id => { status = { phase: "immersive", active: id, target: null }; return true; }, exit() {}, status: () => status, subscribe: () => () => {}, pick: () => [], hover() {} },
+  viewer: { prepare: async input => ({ id: input.id, ready: async () => {}, updatePlacement() {}, hover() {}, dispose() {} }), replaceImages() {}, setMapVisibility() {}, enter: async id => { status = { phase: "immersive", active: id, target: null }; return true; }, exit() {}, status: () => status, subscribe: () => () => {}, pick: () => [], hover() {} },
   externalNavigation: { navigate: async input => { received = input; return { ok: true }; } } });
 assert.equal(result.ok, true); await result.handle.whenSettled(); await result.handle.enter("a-1");
 assert.deepEqual(await result.handle.follow(metadata.id), { ok: true }); assert.equal(received.destination.routeId, "east-route"); assert.equal(received.sphereId, "b-1"); assert.equal(received.source.sphereId, "a-1"); assert.deepEqual(received.link.arrivalView, metadata.arrivalView);

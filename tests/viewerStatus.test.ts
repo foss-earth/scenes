@@ -13,6 +13,7 @@ describe("injected viewer detail observations", () => {
     const viewer: SceneViewerPorts = {
       async prepare(input) { return { id: input.id, async ready() {}, updatePlacement() {}, hover() {}, dispose() {} }; },
       replaceImages() {},
+      setMapVisibility() {},
       async enter() { return true; },
       exit() {},
       status: () => current,

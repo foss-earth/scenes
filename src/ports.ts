@@ -1,5 +1,5 @@
 import type { ImageAsset, ImageAttribution, ImagePose, Mat3, Vec3 } from "@foss-earth/images";
-import type { ExternalDestinationRecord, LinkRecord, OverviewRecord, ResolvedSphere, SceneDiagnostic, ValidatedScene, ViewRecord } from "./format.js";
+import type { ExternalDestinationRecord, LinkRecord, OverviewRecord, ResolvedSphere, SceneDiagnostic, SceneLayerRecord, ValidatedScene, ViewRecord } from "./format.js";
 import type { SceneInput, ResolveSceneInputOptions } from "./manifest.js";
 import type { SceneHistoryAdapter } from "./history.js";
 
@@ -36,6 +36,11 @@ export interface SceneViewerPorts {
   prepare(input: SceneViewerImageInput, signal: AbortSignal): ScenePreparedImage | Promise<ScenePreparedImage>;
   /** Atomically publishes the new metadata; a throw must leave the previous set usable. */
   replaceImages(images: readonly ScenePreparedImage[]): void;
+  /**
+   * Hides these published images on the map. They stay in the set, so a list
+   * can still enter one whose layer is off.
+   */
+  setMapVisibility(hiddenIds: readonly string[]): void;
   enter(id: string, options?: { signal?: AbortSignal; view?: ViewRecord }): Promise<boolean>;
   exit(): void;
   status(): SceneViewerStatus;
@@ -71,15 +76,32 @@ export interface SceneImageStatus {
   width: number; height: number; aroundPx: number; encodedBytes: number; gpuBytes: number;
   warp?: string; tiles?: number;
 }
+export interface SceneLayerStatus {
+  id: string;
+  title: string;
+  /** Absent when this layer only groups sublayers. */
+  kind?: SceneLayerRecord["kind"];
+  /** This layer's own switch. */
+  visible: boolean;
+  /** This layer and every layer above it are on. */
+  shown: boolean;
+  /** The switch can be used. False while a layer above it is off. */
+  enabled: boolean;
+  /** Panorama orbs follow this. Feature lines are kept and not drawn. */
+  drawn: boolean;
+  layers: readonly SceneLayerStatus[];
+}
 export interface SceneStatus extends SceneViewerStatus {
   sceneId: string; revision: string; title: string; generation: number; hovered: string | null;
-  entries: readonly SceneEntryStatus[]; groups: ValidatedScene["groups"]; credits: readonly (ImageAttribution & { assetId: string })[];
+  entries: readonly SceneEntryStatus[]; groups: ValidatedScene["groups"]; layers: readonly SceneLayerStatus[]; credits: readonly (ImageAttribution & { assetId: string })[];
   overview: "none" | "pending" | "applied"; warnings: readonly SceneDiagnostic[];
   renderingAvailable: boolean; unavailableReason: string | null; lastError: string | null; view: ViewRecord | null;
 }
 export interface SceneHandle {
   readonly status: SceneStatus; readonly disposed: boolean;
   enter(id: string, options?: { signal?: AbortSignal; view?: ViewRecord }): Promise<SceneActionResult>;
+  /** Shows or hides one map layer. False when the scene has no such layer. */
+  setLayerVisible(id: string, visible: boolean): boolean;
   follow(linkId: string, options?: { signal?: AbortSignal }): Promise<SceneActionResult>;
   exit(): Promise<SceneActionResult>;
   replace(input: SceneInput, options?: { baseUrl?: string | URL; signal?: AbortSignal }): Promise<{ ok: true } | { ok: false; errors: readonly SceneDiagnostic[] }>;

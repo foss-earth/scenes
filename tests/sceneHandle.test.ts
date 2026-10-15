@@ -9,6 +9,7 @@ function harness() {
   const viewer = {
     prepare: vi.fn(async (input: SceneViewerImageInput, _signal: AbortSignal) => { inputs.push(input); const image: ScenePreparedImage = { id: input.id, ready: vi.fn(async () => {}), updatePlacement: vi.fn(), hover: vi.fn(), dispose: vi.fn() }; images.push(image); return image; }),
     replaceImages: vi.fn((incoming: readonly ScenePreparedImage[]) => { publications.push(incoming); status = { ...status, active: null, target: null, phase: "overview" }; }),
+    setMapVisibility: vi.fn(),
     enter: vi.fn(async (id: string) => { status = { phase: "immersive", active: id, target: null, view: { headingDeg: 10, pitchDeg: 0, verticalFovDeg: 60 } }; for (const listener of subscribers) listener(status); return true; }),
     exit: vi.fn(() => { status = { phase: "overview", active: null, target: null }; for (const listener of subscribers) listener(status); }),
     status: () => status, subscribe: (listener: (status: SceneViewerStatus) => void) => { subscribers.add(listener); return () => { subscribers.delete(listener); }; }, pick: () => ["garden"], hover: vi.fn(),
@@ -179,5 +180,26 @@ describe("actual viewer navigation settlement", () => {
     const late = deferred<{ ok: false; reason: "cancelled"; message: string }>(); vi.mocked(host.world.showOverview).mockImplementationOnce(() => late.promise);
     const stale = result.handle.showOverview(); expect(await result.handle.showOverview()).toEqual({ ok: true }); expect(result.handle.status.overview).toBe("applied");
     late.resolve({ ok: false, reason: "cancelled", message: "Replaced." }); expect(await stale).toMatchObject({ ok: false, reason: "cancelled" }); expect(result.handle.status.overview).toBe("applied"); result.handle.dispose();
+  });
+  it("hides orbs for a map layer that starts off and shows them when the layer is turned on", async () => {
+    const host = harness();
+    const document = fixtureDocument();
+    document.layers = [
+      { id: "outdoor", title: "Outdoor", layers: [{ id: "outdoor-360", title: "360 images", kind: "panoramas", members: ["garden"] }] },
+      { id: "indoor", title: "Indoor", layers: [{ id: "indoor-360", title: "360 images", kind: "panoramas", visible: false, members: ["courtyard"] }] },
+    ];
+    const result = await loadScene(document, host.options); if (!result.ok) throw new Error("fixture"); await result.handle.whenSettled();
+    expect(result.handle.status.layers.map(layer => [layer.id, layer.layers[0]?.id, layer.layers[0]?.visible, layer.layers[0]?.shown])).toEqual([
+      ["outdoor", "outdoor-360", true, true], ["indoor", "indoor-360", false, false],
+    ]);
+    expect(host.viewer.setMapVisibility).toHaveBeenLastCalledWith(["courtyard"]);
+    expect(result.handle.setLayerVisible("indoor-360", true)).toBe(true);
+    expect(host.viewer.setMapVisibility).toHaveBeenLastCalledWith([]);
+    expect(result.handle.setLayerVisible("outdoor", false)).toBe(true);
+    expect(host.viewer.setMapVisibility).toHaveBeenLastCalledWith(["garden"]);
+    expect(result.handle.status.layers[0].layers[0].enabled).toBe(false);
+    expect(result.handle.setLayerVisible("missing", true)).toBe(false);
+    result.handle.dispose();
+    expect(host.viewer.setMapVisibility).toHaveBeenLastCalledWith([]);
   });
 });

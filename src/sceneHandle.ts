@@ -1,7 +1,7 @@
 import type { LinkRecord, ResolvedSphere, ValidatedScene } from "./format.js";
 import { resolveSceneInput, type SceneInput } from "./manifest.js";
 import type { SceneHistoryEntry } from "./history.js";
-import type { LoadSceneOptions, LoadSceneResult, SceneActionResult, SceneEntryStatus, SceneHandle, ScenePlacement, ScenePreparedImage, SceneStatus, SceneViewerImageInput, SceneViewerStatus } from "./ports.js";
+import type { LoadSceneOptions, LoadSceneResult, SceneActionResult, SceneEntryStatus, SceneHandle, SceneLayerStatus, ScenePlacement, ScenePreparedImage, SceneStatus, SceneViewerImageInput, SceneViewerStatus } from "./ports.js";
 
 const failed = (reason: Exclude<SceneActionResult, { ok: true }>["reason"], message: string): SceneActionResult => ({ ok: false, reason, message });
 const messageOf = (error: unknown): string => error instanceof Error ? error.message : String(error);
@@ -22,10 +22,49 @@ export async function loadScene(input: SceneInput, options: LoadSceneOptions): P
 function createSceneHandle(options: LoadSceneOptions): SceneHandle & { replaceValidated(scene: ValidatedScene, signal?: AbortSignal): Promise<{ ok: true } | { ok: false; errors: readonly { path: string; message: string }[] }> } {
   let current: Candidate | null = null, disposed = false, generation = 0, pending: AbortController | null = null;
   let hovered: string | null = null, overview: SceneStatus["overview"] = "none", lastError: string | null = null, overviewRequest = 0;
+  let layerVisible = new Map<string, boolean>();
   let exiting: { published: Candidate | null; promise: Promise<SceneActionResult> } | null = null;
   const listeners = new Set<(status: SceneStatus) => void>(), work = new Set<Promise<unknown>>();
   const track = <T>(promise: Promise<T>): Promise<T> => { work.add(promise); void promise.finally(() => work.delete(promise)).catch(() => {}); return promise; };
   const emit = (): void => { if (current) for (const listener of [...listeners]) { try { listener(snapshot()); } catch { /* A host observer does not own scene cleanup. */ } } };
+  const walkLayers = (layers: readonly ValidatedScene["layers"][number][], ancestorShown: boolean, visit: (layer: ValidatedScene["layers"][number], shown: boolean) => void): void => {
+    for (const layer of layers) {
+      const shown = ancestorShown && layerVisible.get(layer.id) !== false;
+      visit(layer, shown);
+      if (layer.layers) walkLayers(layer.layers, shown, visit);
+    }
+  };
+  const hiddenPanoramaIds = (scene: ValidatedScene): string[] => {
+    let drawsPanoramas = false;
+    const showing = new Set<string>(), covered = new Set<string>();
+    walkLayers(scene.layers, true, (layer, shown) => {
+      if (layer.kind !== "panoramas") return;
+      drawsPanoramas = true;
+      for (const id of layer.members ?? []) { covered.add(id); if (shown) showing.add(id); }
+    });
+    return drawsPanoramas ? [...covered].filter(id => !showing.has(id)) : [];
+  };
+  const findLayer = (layers: readonly ValidatedScene["layers"][number][], id: string): ValidatedScene["layers"][number] | undefined => {
+    for (const layer of layers) {
+      if (layer.id === id) return layer;
+      const child = layer.layers && findLayer(layer.layers, id);
+      if (child) return child;
+    }
+    return undefined;
+  };
+  const adoptLayers = (scene: ValidatedScene): void => {
+    const next = new Map<string, boolean>();
+    walkLayers(scene.layers, true, layer => next.set(layer.id, layer.visible !== false));
+    layerVisible = next;
+  };
+  const layerStatus = (layers: readonly ValidatedScene["layers"][number][], ancestorShown: boolean): SceneLayerStatus[] => layers.map(layer => {
+    const visible = layerVisible.get(layer.id) !== false;
+    const shown = ancestorShown && visible;
+    return {
+      id: layer.id, title: layer.title, ...(layer.kind ? { kind: layer.kind } : {}), visible, shown, enabled: ancestorShown,
+      drawn: layer.kind === "panoramas", layers: layerStatus(layer.layers ?? [], shown),
+    };
+  });
   const report = (entry: Entry | null, kind: "preview" | "navigation", error: unknown): void => {
     const cause = messageOf(error);
     try { options.onFailure?.({ kind, sphere: entry ? { id: entry.record.id, title: entry.record.title } : null, cause, message: `${entry ? `The panorama ${entry.record.title}` : "The scene"} could not ${kind === "preview" ? "load its preview" : "navigate"}: ${cause}.` }); } catch { /* Reporting must not stop resource cleanup. */ }
@@ -54,7 +93,7 @@ function createSceneHandle(options: LoadSceneOptions): SceneHandle & { replaceVa
         links: record.links.map(link => ({ id: link.id, label: link.label, target: link.target, ...(link.externalDestination ? { externalDestination: link.externalDestination } : {}), enabled: link.externalDestination ? Boolean(options.externalNavigation && scene?.externalDestinations?.has(link.externalDestination)) : Boolean(scene?.spheres.has(link.target)), placed: Boolean(link.direction) })),
       };
     });
-    return { ...viewer, phase: disposed ? "disposed" : viewer.phase, sceneId: scene?.id ?? "", revision: scene?.revision ?? "", title: scene?.title ?? "", generation, hovered, entries, groups: scene?.groups ?? [], credits: viewer.credits ?? (viewer.active && current?.entries.get(viewer.active) ? [{ ...current.entries.get(viewer.active)!.input.credits, assetId: current.entries.get(viewer.active)!.input.asset.id }] : []), overview, warnings: scene?.warnings ?? [], renderingAvailable: viewer.renderingAvailable ?? true, unavailableReason: viewer.unavailableReason ?? null, lastError: lastError ?? viewer.lastError ?? null, view: viewer.view ?? null };
+    return { ...viewer, phase: disposed ? "disposed" : viewer.phase, sceneId: scene?.id ?? "", revision: scene?.revision ?? "", title: scene?.title ?? "", generation, hovered, entries, groups: scene?.groups ?? [], layers: layerStatus(scene?.layers ?? [], true), credits: viewer.credits ?? (viewer.active && current?.entries.get(viewer.active) ? [{ ...current.entries.get(viewer.active)!.input.credits, assetId: current.entries.get(viewer.active)!.input.asset.id }] : []), overview, warnings: scene?.warnings ?? [], renderingAvailable: viewer.renderingAvailable ?? true, unavailableReason: viewer.unavailableReason ?? null, lastError: lastError ?? viewer.lastError ?? null, view: viewer.view ?? null };
   }
   async function prepare(scene: ValidatedScene, request: AbortController, signal?: AbortSignal): Promise<Candidate> {
     const scope = new AbortController(), candidate: Candidate = { scene, entries: new Map(), scope };
@@ -102,9 +141,12 @@ function createSceneHandle(options: LoadSceneOptions): SceneHandle & { replaceVa
       candidate = await track(prepare(scene, request, signal));
       if (disposed || token !== generation || signal?.aborted || request.signal.aborted) { release(candidate); return { ok: false, errors: [{ path: "$", message: "Loading was cancelled." }] }; }
       const outgoing = current;
+      const previousLayers = layerVisible;
       current = candidate;
+      adoptLayers(scene);
       try { options.viewer.replaceImages([...candidate.entries.values()].flatMap(entry => entry.prepared ? [entry.prepared] : [])); }
-      catch (error) { current = outgoing; throw error; }
+      catch (error) { current = outgoing; layerVisible = previousLayers; throw error; }
+      options.viewer.setMapVisibility(hiddenPanoramaIds(scene));
       candidate = null; hovered = null; lastError = null; overview = scene.overview ? "pending" : "none";
       if (outgoing) release(outgoing);
       const published = current;
@@ -280,7 +322,16 @@ function createSceneHandle(options: LoadSceneOptions): SceneHandle & { replaceVa
   });
   return {
     get status() { return snapshot(); }, get disposed() { return disposed; }, replaceValidated,
-    enter, exit: () => track(exit()), showOverview,
+    enter, setLayerVisible(id, visible) {
+      if (disposed || !current || typeof visible !== "boolean") return false;
+      const layer = findLayer(current.scene.layers, id);
+      if (!layer) return false;
+      if ((layerVisible.get(id) !== false) === visible) return true;
+      layerVisible.set(id, visible);
+      options.viewer.setMapVisibility(hiddenPanoramaIds(current.scene));
+      emit();
+      return true;
+    }, exit: () => track(exit()), showOverview,
     async follow(id, followOptions = {}) { const active = options.viewer.status().active; const link = active ? current?.entries.get(active)?.record.links.find(item => item.id === id) : undefined; return link && current && active ? track(followLink(link, current, active, followOptions)) : failed("unavailable", `Link "${id}" is not available from the current panorama.`); },
     async replace(input, replaceOptions = {}) {
       if (disposed) return { ok: false, errors: [{ path: "$", message: "The scene is disposed." }] };
@@ -292,7 +343,11 @@ function createSceneHandle(options: LoadSceneOptions): SceneHandle & { replaceVa
         return resolved.ok ? await replaceValidated(resolved.scene, signal, context) : resolved;
       } finally { if (pending === context.request) pending = null; }
     },
-    pick: (x, y) => disposed || options.viewer.status().phase !== "overview" ? [] : options.viewer.pick(x, y).filter(id => current?.entries.has(id)),
+    pick: (x, y) => {
+      if (disposed || !current || options.viewer.status().phase !== "overview") return [];
+      const hidden = new Set(hiddenPanoramaIds(current.scene));
+      return options.viewer.pick(x, y).filter(id => current?.entries.has(id) && !hidden.has(id));
+    },
     hover(id) {
       const next = !disposed && options.viewer.status().phase === "overview" && id && current?.entries.has(id) ? id : null;
       if (next === hovered) return;
@@ -310,7 +365,7 @@ function createSceneHandle(options: LoadSceneOptions): SceneHandle & { replaceVa
       if (disposed) return; disposed = true; generation += 1; pending?.abort(new Error("The scene was disposed.")); pending = null;
       try { offHistory?.(); } catch (error) { report(null, "navigation", error); }
       try { offViewer(); } catch (error) { report(null, "navigation", error); }
-      if (current) { try { options.viewer.replaceImages([]); } catch (error) { report(null, "navigation", error); } finally { release(current); } }
+      if (current) { try { options.viewer.setMapVisibility([]); options.viewer.replaceImages([]); } catch (error) { report(null, "navigation", error); } finally { release(current); } }
       emit(); current = null; listeners.clear();
     },
   };

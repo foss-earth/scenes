@@ -71,6 +71,27 @@ export function createScenesPanel(options: { document: Document; controller: Sce
     if (status.overview === "pending") { heading.append(note("The overview waits for the map to show the ground at the scene's place.")); heading.append(button("Go to the scene", () => { void controller.handle()?.showOverview(); })); }
     else if (status.overview === "applied" && status.phase === "overview") heading.append(button("Back to the scene's view", () => { void controller.handle()?.showOverview(); }));
     heading.append(button("Unload", () => controller.unload(), "Removes the scene and everything it loaded.")); if (status.lastError) heading.append(note(status.lastError)); sceneBlock.append(heading);
+    if (status.layers.length) {
+      const layers = row("Map layers");
+      const renderLayers = (items: SceneStatus["layers"], depth: number, parent?: string): void => {
+        for (const layer of items) {
+          const label = el("label", "foss-earth-scene-layer");
+          if (depth) label.style.paddingLeft = `${depth * 16}px`;
+          const box = el("input");
+          box.type = "checkbox";
+          box.checked = layer.visible;
+          box.disabled = !layer.enabled;
+          box.setAttribute("aria-label", parent ? `${parent}, ${layer.title}` : layer.title);
+          box.addEventListener("change", () => { controller.handle()?.setLayerVisible(layer.id, box.checked); });
+          label.append(box, el("span", undefined, layer.title));
+          if (layer.kind === "features") label.title = "This layer's lines stay with the scene. The map does not draw them yet.";
+          layers.append(label);
+          renderLayers(layer.layers, depth + 1, layer.title);
+        }
+      };
+      renderLayers(status.layers, 0);
+      sceneBlock.append(layers);
+    }
     const list = row("Panoramas");
     for (const entry of status.entries) {
       const item = el("details", "foss-earth-scene-entry"), summary = el("summary", "foss-earth-scene-entry__summary"); item.dataset.sphere = entry.id; item.open = expanded.has(entry.id);

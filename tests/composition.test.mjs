@@ -35,6 +35,19 @@ describe("checked public scene composition", () => {
     assert.ok(result.provenance.aliases.some(alias => alias.child === "east" && alias.originalId === "b-1" && alias.outputId === "east.b-1"));
   });
   it("rejects aliases for records that do not exist", () => { const f = createCompositionFixture(); f.request.children[0].aliases = { entities: { missing: "alias" } }; failure(f, "reference"); });
+  it("carries map layers and remaps panorama members", () => {
+    const f = createCompositionFixture(), west = f.documents.get("west"), east = f.documents.get("east");
+    const members = west.entities.filter(entity => entity.type === "panorama").map(entity => entity.id);
+    const eastMembers = east.entities.filter(entity => entity.type === "panorama").map(entity => entity.id);
+    west.layers = [{ id: "outdoor", title: "Outdoor", layers: [{ id: "outdoor-360", title: "360 images", kind: "panoramas", members }] }, { id: "routes", title: "Routes", layers: [{ id: "routes-lines", title: "Lines", kind: "features", visible: false, features: [{ id: "campus", line: [[-93.2, 44.9], [-93.1, 45]] }] }] }];
+    east.layers = [{ id: "indoor", title: "Indoor", layers: [{ id: "indoor-360", title: "360 images", kind: "panoramas", members: eastMembers }] }];
+    f.repin("west"); f.repin("east");
+    const layers = prepare(f).document.layers;
+    assert.deepEqual(layers[0].layers[0].members, members);
+    assert.equal(layers[1].layers[0].kind, "features");
+    assert.equal(layers[1].layers[0].visible, false);
+    assert.deepEqual(layers[2].layers[0].members, eastMembers);
+  });
   it("rejects changed bytes without repinning", () => { const f = createCompositionFixture(), url = f.request.children[0].manifest.url; f.inputs.set(url, f.inputs.get(url).map((byte, index) => index === 10 ? byte ^ 1 : byte)); failure(f, "drift"); });
   it("rejects manifest identity/revision drift", () => { const f = createCompositionFixture(); f.request.children[0].manifest.revision = "other"; failure(f, "drift"); });
   it("rejects media release identity drift", () => { const f = createCompositionFixture(); f.request.children[0].media.id = "other"; failure(f, "drift"); });

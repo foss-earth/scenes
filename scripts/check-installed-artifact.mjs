@@ -70,6 +70,7 @@ const actions = [], disposals = [], inputs = [], subscribers = new Set(); let st
 const viewer = {
   async prepare(input, signal) { assert.equal(signal.aborted, false); inputs.push(input); return { id: input.id, async ready() {}, updatePlacement() {}, hover() {}, dispose() { disposals.push(input.id); } }; },
   replaceImages(images) { actions.push(["publish", images.map(image => image.id)]); state = { phase: "overview", active: null, target: null }; },
+  setMapVisibility() {},
   async enter(id) { state = { phase: "immersive", active: id, target: null }; for (const callback of subscribers) callback(state); return true; },
   exit() { state = { phase: "overview", active: null, target: null }; }, status: () => state, subscribe(callback) { subscribers.add(callback); return () => subscribers.delete(callback); }, pick: () => ["garden"], hover() {},
 };

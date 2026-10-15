@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { createSceneController, type SceneControllerOptions, type SceneHandle, type SceneStatus, type LoadSceneResult } from "../src/browser.js";
 const examples = [{ id: "tour", title: "Host tour", description: "Host-owned scene", url: "tour.json" }];
 function handle(): SceneHandle {
-  const status: SceneStatus = { phase: "overview", active: null, target: null, sceneId: "tour", revision: "r1", title: "Host tour", generation: 1, hovered: null, entries: [], groups: [], credits: [], overview: "none", warnings: [], renderingAvailable: true, unavailableReason: null, lastError: null, view: null };
+  const status: SceneStatus = { phase: "overview", active: null, target: null, sceneId: "tour", revision: "r1", title: "Host tour", generation: 1, hovered: null, entries: [], groups: [], layers: [], credits: [], overview: "none", warnings: [], renderingAvailable: true, unavailableReason: null, lastError: null, view: null };
   const created: SceneHandle = { status, disposed: false, enter: vi.fn(async () => ({ ok: true as const })), follow: vi.fn(async () => ({ ok: true as const })), exit: vi.fn(async () => ({ ok: true as const })), replace: vi.fn(async () => ({ ok: true as const })), showOverview: vi.fn(async () => ({ ok: true as const })), pick: vi.fn(() => ["a"]), hover: vi.fn(), hotspots: () => [], subscribe(listener) { listener(status); return vi.fn(); }, onFrame: () => vi.fn(), whenSettled: async () => {}, dispose: vi.fn() };
   return created;
 }

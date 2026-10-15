@@ -59,6 +59,13 @@
         "$ref": "#/$defs/group"
       }
     },
+    "layers": {
+      "type": "array",
+      "description": "Independent parts of the map. A layer groups sublayers, shows panorama orbs, or keeps lines such as a path or a route for a later drawing owner.",
+      "items": {
+        "$ref": "#/$defs/layer"
+      }
+    },
     "initialPanorama": {
       "$ref": "#/$defs/id",
       "description": "A suggested destination. Loading a scene still opens its overview."
@@ -552,6 +559,93 @@
         },
         "extensions": {
           "$ref": "#/$defs/extensions"
+        }
+      }
+    },
+    "layer": {
+      "type": "object",
+      "description": "A map layer. It groups sublayers, or it draws panorama orbs or keeps geographic lines. A sublayer is shown only while it and every layer above it are on.",
+      "required": [
+        "id",
+        "title"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "title": {
+          "$ref": "#/$defs/text"
+        },
+        "visible": {
+          "type": "boolean",
+          "description": "Whether the layer starts shown. Absent means shown."
+        },
+        "layers": {
+          "type": "array",
+          "minItems": 1,
+          "description": "Sublayers. A grouping layer has these and no kind of its own.",
+          "items": {
+            "$ref": "#/$defs/layer"
+          }
+        },
+        "kind": {
+          "enum": [
+            "panoramas",
+            "features"
+          ],
+          "description": "What a layer draws. Absent when it only groups sublayers."
+        },
+        "members": {
+          "type": "array",
+          "description": "Panorama entity ids. Required when kind is panoramas.",
+          "items": {
+            "$ref": "#/$defs/id"
+          },
+          "uniqueItems": true,
+          "minItems": 1
+        },
+        "features": {
+          "type": "array",
+          "description": "Geographic lines. Used when kind is features.",
+          "items": {
+            "$ref": "#/$defs/feature"
+          }
+        }
+      }
+    },
+    "feature": {
+      "type": "object",
+      "required": [
+        "id",
+        "line"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "title": {
+          "$ref": "#/$defs/text"
+        },
+        "line": {
+          "type": "array",
+          "minItems": 2,
+          "description": "Positions as longitude then latitude, in degrees.",
+          "items": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "prefixItems": [
+              {
+                "$ref": "#/$defs/longitudeDeg"
+              },
+              {
+                "$ref": "#/$defs/latitudeDeg"
+              }
+            ],
+            "items": false
+          }
         }
       }
     },

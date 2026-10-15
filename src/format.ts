@@ -108,6 +108,39 @@ export interface GroupRecord {
   extensions?: SceneExtensions;
 }
 
+/**
+ * One geographic line. Positions are longitude then latitude, in degrees.
+ * A features layer keeps these for a later drawing owner (a path, a tunnel, a route).
+ */
+export interface SceneFeatureRecord {
+  id: string;
+  title?: string;
+  line: readonly (readonly [number, number])[];
+}
+
+/**
+ * A named part of the map that can be shown or hidden on its own.
+ * A layer either groups sublayers, or draws one kind of content.
+ * "panoramas" lists panorama entity ids whose orbs this layer shows.
+ * "features" holds geographic lines that are not panoramas. This loader keeps
+ * them and does not draw them. A sublayer is shown only while it and every
+ * layer above it are on.
+ */
+export interface SceneLayerRecord {
+  id: string;
+  title: string;
+  /** Starts shown. Absent means shown. */
+  visible?: boolean;
+  /** Child layers. Present when this layer only groups them. */
+  layers?: readonly SceneLayerRecord[];
+  /** Absent when this layer only groups sublayers. */
+  kind?: "panoramas" | "features";
+  /** Panorama entity ids. Present when kind is "panoramas". */
+  members?: readonly string[];
+  /** Lines. Present when kind is "features" and the layer has geometry. */
+  features?: readonly SceneFeatureRecord[];
+}
+
 export interface OverviewRecord {
   target: { longitudeDeg: number; latitudeDeg: number; height?: HeightRecord | null };
   /** Positive camera-to-target metres. */
@@ -129,6 +162,8 @@ export interface SceneDocument<R extends ImageRepresentation = ImageRepresentati
   assets: readonly SphereAssetRecord<R>[];
   entities: readonly (SphereEntityRecord | { id: string; type: string; required?: boolean })[];
   groups?: readonly GroupRecord[];
+  /** Independent map layers. Absent: every panorama orb is shown. */
+  layers?: readonly SceneLayerRecord[];
   externalDestinations?: readonly ExternalDestinationRecord[];
   initialPanorama?: string;
   overview?: OverviewRecord;
@@ -164,6 +199,7 @@ export interface ValidatedScene<R extends ImageRepresentation = ImageRepresentat
   entityOrder: readonly string[];
   unsupported: ReadonlyMap<string, UnsupportedEntity>;
   groups: readonly GroupRecord[];
+  layers: readonly SceneLayerRecord[];
   /** Optional for legacy structural hosts; validated v1 documents always supply it. */
   externalDestinations?: ReadonlyMap<string, ExternalDestinationRecord>;
   initialPanorama: string | null;

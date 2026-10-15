@@ -1,5 +1,5 @@
 import { ImageRecordChecker, isRecord, type ImageAsset, type ImageRepresentation, type RepresentationHooks } from "@foss-earth/images";
-import { SCENE_FORMAT, SCENE_FORMAT_VERSION, type SceneDiagnostic, type SceneValidation, type ResolvedAsset, type ResolvedSphere, type UnsupportedEntity, type GroupRecord, type ExternalDestinationRecord } from "./format.js";
+import { SCENE_FORMAT, SCENE_FORMAT_VERSION, type SceneDiagnostic, type SceneValidation, type ResolvedAsset, type ResolvedSphere, type UnsupportedEntity, type GroupRecord, type ExternalDestinationRecord, type SceneFeatureRecord, type SceneLayerRecord } from "./format.js";
 import { checkAttribution, checkOverview, checkSphere, checkSceneMarkerStyle } from "./envelopeChecks.js";
 
 export interface SceneLimits { manifestBytes: number; entities: number; assets: number; links: number }
@@ -58,7 +58,7 @@ export function validateScene(input: unknown, options: ValidateSceneOptions): Sc
   }
   let base: URL | null = null;
   if (options.baseUrl) { try { base = new URL(String(options.baseUrl)); } catch { checker.fail("$", `the base URL ${String(options.baseUrl)} is not a URL`); } }
-  checker.keys(root, "$", ["format", "version", "id", "revision", "title", "requiredExtensions", "extensions", "assets", "entities", "groups", "initialPanorama", "overview", "markerStyle", "externalDestinations"]);
+  checker.keys(root, "$", ["format", "version", "id", "revision", "title", "requiredExtensions", "extensions", "assets", "entities", "groups", "layers", "initialPanorama", "overview", "markerStyle", "externalDestinations"]);
   const sceneStyle = root.markerStyle === undefined ? {} : checkSceneMarkerStyle(checker, root.markerStyle, "$.markerStyle");
   const id = checker.id(root.id, "$.id"), revision = checker.text(root.revision, "$.revision"), title = checker.text(root.title, "$.title");
   const extensions = checker.extensions(root.extensions, "$.extensions");
@@ -187,9 +187,101 @@ export function validateScene(input: unknown, options: ValidateSceneOptions): Sc
       if (id && title) groups.push({ id, title, members, ...(Object.keys(extensions).length ? { extensions } : {}) });
     });
   }
+  const layers = checkLayers(checker, root.layers, entityPaths, spheres);
   let initialPanorama: string | null = null;
   if (root.initialPanorama !== undefined) { const initial = checker.id(root.initialPanorama, "$.initialPanorama"); if (initial && !spheres.has(initial)) checker.fail("$.initialPanorama", `names "${initial}", which is not a supported panorama of this scene`); else initialPanorama = initial; }
   const overview = root.overview === undefined ? null : checkOverview(checker, root.overview, "$.overview");
   if (checker.errors.length || !id || !revision || !title) return { ok: false, errors: checker.errors };
-  return { ok: true, scene: { format: SCENE_FORMAT, version: SCENE_FORMAT_VERSION, id, revision, title, baseUrl: base?.href ?? null, assets, extensionData, spheres, entityOrder, unsupported, groups, externalDestinations, initialPanorama, overview, extensions, warnings: checker.warnings, manifestBytes } };
+  return { ok: true, scene: { format: SCENE_FORMAT, version: SCENE_FORMAT_VERSION, id, revision, title, baseUrl: base?.href ?? null, assets, extensionData, spheres, entityOrder, unsupported, groups, layers, externalDestinations, initialPanorama, overview, extensions, warnings: checker.warnings, manifestBytes } };
+}
+
+function checkLayers(checker: ImageRecordChecker, value: unknown, entities: ReadonlyMap<string, string>, spheres: ReadonlyMap<string, ResolvedSphere>): SceneLayerRecord[] {
+  if (value === undefined) return [];
+  const seen = new Set<string>();
+  const covered = new Set<string>();
+  let drawsPanoramas = false;
+  const layers = (checker.array(value, "$.layers") ?? []).flatMap((entry, index) => {
+    const layer = checkLayer(checker, entry, `$.layers[${index}]`, seen, covered, entities, spheres, found => { drawsPanoramas ||= found; });
+    return layer ? [layer] : [];
+  });
+  if (drawsPanoramas) for (const id of spheres.keys()) if (!covered.has(id)) checker.fail("$.layers", `panorama "${id}" is not in a panoramas layer`);
+  return layers;
+}
+
+function checkLayer(checker: ImageRecordChecker, value: unknown, path: string, seen: Set<string>, covered: Set<string>, entities: ReadonlyMap<string, string>, spheres: ReadonlyMap<string, ResolvedSphere>, notePanoramas: (found: boolean) => void): SceneLayerRecord | null {
+  const record = checker.record(value, path);
+  if (!record) return null;
+  checker.keys(record, path, ["id", "title", "visible", "layers", "kind", "members", "features"]);
+  const id = checker.id(record.id, `${path}.id`), title = checker.text(record.title, `${path}.title`);
+  let visible: boolean | undefined;
+  if (record.visible !== undefined) {
+    if (typeof record.visible !== "boolean") checker.fail(`${path}.visible`, "must be true or false");
+    else visible = record.visible;
+  }
+  if (id && seen.has(id)) checker.fail(`${path}.id`, `repeats layer id "${id}"`);
+  if (id) seen.add(id);
+  const groups = record.layers !== undefined;
+  const kind = record.kind === undefined ? undefined : checker.oneOf(record.kind, `${path}.kind`, ["panoramas", "features"] as const);
+  if (groups && kind) checker.fail(path, "groups sublayers or draws content, not both");
+  if (!groups && !kind && record.kind === undefined) checker.fail(path, "needs sublayers or a kind");
+  const own = visible !== undefined ? { visible } : {};
+  if (groups) {
+    if (record.members !== undefined) checker.fail(`${path}.members`, "belongs on a panoramas layer");
+    if (record.features !== undefined) checker.fail(`${path}.features`, "belongs on a features layer");
+    const children = (checker.array(record.layers, `${path}.layers`) ?? []).flatMap((entry, index) => {
+      const child = checkLayer(checker, entry, `${path}.layers[${index}]`, seen, covered, entities, spheres, notePanoramas);
+      return child ? [child] : [];
+    });
+    if (Array.isArray(record.layers) && children.length === 0 && !checker.errors.some(error => error.path.startsWith(`${path}.layers`))) checker.fail(`${path}.layers`, "needs a sublayer");
+    return id && title ? { id, title, ...own, layers: children } : null;
+  }
+  if (kind === "panoramas") {
+    notePanoramas(true);
+    if (record.features !== undefined) checker.fail(`${path}.features`, "belongs on a features layer");
+    const members: string[] = [];
+    (checker.array(record.members, `${path}.members`) ?? []).forEach((member, at) => {
+      const memberId = checker.id(member, `${path}.members[${at}]`);
+      if (!memberId) return;
+      if (!entities.has(memberId)) checker.fail(`${path}.members[${at}]`, `names "${memberId}", which is not an entity of this scene`);
+      else if (members.includes(memberId)) checker.fail(`${path}.members[${at}]`, `repeats "${memberId}" in this layer`);
+      else { members.push(memberId); if (spheres.has(memberId)) covered.add(memberId); }
+    });
+    if (Array.isArray(record.members) && members.length === 0 && !checker.errors.some(error => error.path.startsWith(`${path}.members`))) checker.fail(`${path}.members`, "needs at least one panorama");
+    return id && title ? { id, title, ...own, kind, members } : null;
+  }
+  if (kind === "features") {
+    if (record.members !== undefined) checker.fail(`${path}.members`, "belongs on a panoramas layer");
+    const features = record.features === undefined ? undefined : checkFeatures(checker, record.features, `${path}.features`);
+    return id && title ? { id, title, ...own, kind, ...(features ? { features } : {}) } : null;
+  }
+  return null;
+}
+
+function checkFeatures(checker: ImageRecordChecker, value: unknown, path: string): SceneFeatureRecord[] | undefined {
+  const features: SceneFeatureRecord[] = [];
+  const seen = new Set<string>();
+  let ok = true;
+  (checker.array(value, path) ?? []).forEach((entry, index) => {
+    const featurePath = `${path}[${index}]`, record = checker.record(entry, featurePath);
+    if (!record) { ok = false; return; }
+    checker.keys(record, featurePath, ["id", "title", "line"]);
+    const id = checker.id(record.id, `${featurePath}.id`);
+    const title = record.title === undefined ? undefined : checker.text(record.title, `${featurePath}.title`);
+    if (id && seen.has(id)) checker.fail(`${featurePath}.id`, `repeats feature id "${id}"`);
+    if (id) seen.add(id);
+    const line: [number, number][] = [];
+    (checker.array(record.line, `${featurePath}.line`) ?? []).forEach((position, at) => {
+      const positionPath = `${featurePath}.line[${at}]`;
+      const pair = checker.array(position, positionPath);
+      if (!pair) { ok = false; return; }
+      if (pair.length !== 2) { checker.fail(positionPath, "must be longitude and latitude"); ok = false; return; }
+      const longitudeDeg = checker.within(pair[0], `${positionPath}[0]`, -180, 180, true, false);
+      const latitudeDeg = checker.within(pair[1], `${positionPath}[1]`, -90, 90, true, true);
+      if (longitudeDeg === null || latitudeDeg === null) { ok = false; return; }
+      line.push([longitudeDeg, latitudeDeg]);
+    });
+    if (Array.isArray(record.line) && line.length < 2) { checker.fail(`${featurePath}.line`, "needs at least two positions"); ok = false; }
+    if (id) features.push({ id, ...(title ? { title } : {}), line });
+  });
+  return ok ? features : undefined;
 }

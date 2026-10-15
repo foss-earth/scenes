@@ -19,7 +19,7 @@ function host() {
       showOverview: async () => ({ ok: true, state: "pending" }),
     },
     viewer: { prepare: async input => { inputs.push(input); return { id: input.id, ready: async () => {}, updatePlacement() {}, hover() {}, dispose() {} }; },
-      replaceImages() {}, enter: async id => { status = { phase: "immersive", active: id, target: null }; return true; }, exit() { status = { phase: "overview", active: null, target: null }; }, status: () => status, subscribe: () => () => {}, pick: () => [], hover() {} } };
+      replaceImages() {}, setMapVisibility() {}, enter: async id => { status = { phase: "immersive", active: id, target: null }; return true; }, exit() { status = { phase: "overview", active: null, target: null }; }, status: () => status, subscribe: () => () => {}, pick: () => [], hover() {} } };
   return { options, inputs };
 }
 describe("declared standalone external navigation", () => {

@@ -82,6 +82,21 @@ describe("the v1 scene envelope with supplied owners", () => {
     const result = validateScene(document, { ...options, extensionHooks: [{ name: "example.notes", validateDocument }] });
     expect(result.ok).toBe(true); if (!result.ok) return; expect(result.scene.extensionData.get("example.notes")).toEqual({ accepted: true }); expect(validateDocument).toHaveBeenCalledTimes(1);
   });
+  it("accepts panorama and feature map layers and refuses a panorama left out", () => {
+    const document = example();
+    document.layers = [
+      { id: "outdoor", title: "Outdoor", layers: [{ id: "outdoor-360", title: "360 images", kind: "panoramas", members: ["garden", "courtyard"] }] },
+      { id: "routes", title: "Routes", layers: [{ id: "routes-lines", title: "Lines", kind: "features", visible: false, features: [{ id: "campus", line: [[-93.2, 44.9], [-93.1, 45]] }] }] },
+    ];
+    const result = validateScene(document, options);
+    expect(result.ok).toBe(true); if (!result.ok) return;
+    expect(result.scene.layers.map(layer => layer.id)).toEqual(["outdoor", "routes"]);
+    expect(result.scene.layers[0].layers?.[0]).toMatchObject({ id: "outdoor-360", kind: "panoramas", members: ["garden", "courtyard"] });
+    expect(result.scene.layers[1].layers?.[0].features?.[0].line).toEqual([[-93.2, 44.9], [-93.1, 45]]);
+    const incomplete = example();
+    incomplete.layers = [{ id: "outdoor", title: "Outdoor", kind: "panoramas", members: ["garden"] }];
+    expect(validateScene(incomplete, options).ok).toBe(false);
+  });
   it("resolves safe attribution URLs and refuses credentials and non-http protocols", () => {
     const document = example(); (assets(document)[0].attribution as Record<string, unknown>).url = "credits.html";
     const result = validateScene(document, options); expect(result.ok).toBe(true); if (result.ok) expect(result.scene.assets.get("garden-image")?.attribution.url).toBe("https://scenes.example/neutral/credits.html");

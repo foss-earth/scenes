@@ -459,6 +459,8 @@ export function composeSceneDocuments(input: SceneCompositionRequest, options: S
   };
   for (const child of children.values()) verifyFiles(child.validated, child.media, child.pin.key);
   const assets: ObjectRecord[] = [], entityRecords = new Map<string, ObjectRecord>(), groupRecords = new Map<string, ObjectRecord>();
+  const layerRecords: ObjectRecord[] = [];
+  const seenLayerIds = new Set<string>();
   const externalDestinations = new Map<string, ObjectRecord>();
   for (const child of children.values()) for (const value of asArray(child.document.externalDestinations ?? [], "$child.externalDestinations")) {
     const record = clone(value, "$composed.externalDestination"), prior = externalDestinations.get(record.id as string);
@@ -503,6 +505,15 @@ export function composeSceneDocuments(input: SceneCompositionRequest, options: S
       group.members = asArray(group.members, "$child.group.members").map(id => child.context.resolveId("entities", id as string));
       rewriteExtensions(group, "group", child, `$children.${child.pin.key}.groups.${originalId}`); groupRecords.set(group.id as string, group);
     }
+    const rewriteLayer = (value: unknown, path: string): ObjectRecord => {
+      const layer = clone(value, path), id = identifier(layer.id, `${path}.id`);
+      if (seenLayerIds.has(id)) fail("collision", `${path}.id`, "repeats a layer id");
+      seenLayerIds.add(id);
+      if (layer.layers !== undefined) layer.layers = asArray(layer.layers, `${path}.layers`).map((entry, index) => rewriteLayer(entry, `${path}.layers[${index}]`));
+      if (layer.kind === "panoramas") layer.members = asArray(layer.members, `${path}.members`).map(member => child.context.resolveId("entities", identifier(member, `${path}.member`)));
+      return layer;
+    };
+    asArray(child.document.layers ?? [], "$child.layers").forEach((value, index) => layerRecords.push(rewriteLayer(value, `$children.${child.pin.key}.layers[${index}]`)));
   }
   const reference = (value: unknown, kind: SceneCompositionIdKind, path: string, sphere = false): { id: string; child: ChildState } => {
     const record = asRecord(value, path); keys(record, ["child", "id"], path);
@@ -580,6 +591,7 @@ export function composeSceneDocuments(input: SceneCompositionRequest, options: S
   const document: ObjectRecord = { format: SCENE_FORMAT, version: SCENE_FORMAT_VERSION, id: request.id, revision: request.revision, title: request.title,
     ...(externalDestinations.size ? { externalDestinations: [...externalDestinations.values()] } : {}),
     assets, entities: ordered(request.entityOrder, "entities", entityRecords, "$request.entityOrder"), groups: ordered(request.groupOrder ?? defaultGroups, "groups", groupRecords, "$request.groupOrder"),
+    ...(layerRecords.length ? { layers: layerRecords } : {}),
     ...(request.initialPanorama === undefined ? {} : { initialPanorama: reference(request.initialPanorama, "entities", "$request.initialPanorama", true).id }),
     ...(request.overview === undefined ? {} : { overview: request.overview }),
     ...(Object.keys(documentExtensions).length ? { extensions: documentExtensions } : {}), ...(requiredExtensions.length ? { requiredExtensions } : {}),
