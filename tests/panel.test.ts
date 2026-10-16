@@ -30,6 +30,20 @@ describe("injected Scenes presentation", () => {
       host.set({ loading: null, errors: [{ path: "$", message: "<img src=x onerror=alert(1)>" }], status: null }); expect(panel.element.querySelector("img")).toBeNull(); expect(panel.element.textContent).toContain("<img src=x");
     } finally { panel.destroy(); panel.destroy(); expect(host.listeners.size).toBe(0); expect(host.destroys).toEqual(["content", "credits", "sections"]); expect(contribution.destroy).toHaveBeenCalledTimes(1); host.dom.window.close(); }
   });
+  it("puts a host's image links straight after Content, collapsed, ahead of image settings", () => {
+    const host = setup(), part = (section: "links" | "appearance" | "saved", title: string) => ({ section, title, element: host.document.createElement("div"), destroy: vi.fn() });
+    const contributions = [part("saved", "Saved images"), part("appearance", "Appearance"), part("links", "Image links")];
+    const panel = createScenesPanel({ document: host.document, controller: host.controller, ui: host.ui, contributions });
+    try {
+      expect(host.sections.map(section => [section.id, section.title, section.defaultOpen])).toEqual([
+        ["scenes.content", "Content", true], ["scenes.links", "Image links", false], ["scenes.appearance", "Appearance", false],
+        ["scenes.saved", "Saved images", false], ["scenes.credits", "Credits", false]]);
+      expect(host.sections[1].element).toBe(contributions[2].element);
+      const listen = vi.spyOn(host.dom.window, "addEventListener");
+      expect(() => createScenesPanel({ document: host.document, controller: host.controller, ui: host.ui, contributions: [part("links", "A"), part("links", "B")] })).toThrow("unique");
+      expect(listen).not.toHaveBeenCalled();
+    } finally { panel.destroy(); for (const contribution of contributions) expect(contribution.destroy).toHaveBeenCalledTimes(1); host.dom.window.close(); }
+  });
   it("anchors links on supplied frames and releases overlay subscriptions", () => {
     const host = setup(), container = host.document.querySelector<HTMLElement>("main")!, overlay = createSceneHotspots({ document: host.document, controller: host.controller, container });
     try {

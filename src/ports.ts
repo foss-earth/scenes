@@ -47,6 +47,8 @@ export interface SceneViewerPorts {
   subscribe(listener: (status: SceneViewerStatus) => void): () => void;
   pick(clientX: number, clientY: number): readonly string[];
   hover(id: string | null): void;
+  /** Updates navigation without preparing images again. */
+  updateActions?(id: string, actions: SceneViewerImageInput["actions"]): void;
 }
 export interface ScenePlacement {
   /** Local heading/pitch directions to image directions, independent of world coordinates. */
@@ -127,6 +129,8 @@ export interface SceneHandle {
    * layer. False when the photograph or the layer is not in this scene.
    */
   movePanorama(entityId: string, layerId: string): boolean;
+  /** Adds local image links alongside authored links. Empty restores authored links. */
+  setAdditionalLinks(entityId: string, links: readonly { target: string; label: string; direction?: { headingDeg: number; pitchDeg: number } }[]): boolean;
   follow(linkId: string, options?: { signal?: AbortSignal }): Promise<SceneActionResult>;
   exit(): Promise<SceneActionResult>;
   replace(input: SceneInput, options?: { baseUrl?: string | URL; signal?: AbortSignal }): Promise<{ ok: true } | { ok: false; errors: readonly SceneDiagnostic[] }>;

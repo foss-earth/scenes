@@ -50,6 +50,8 @@ function createSceneHandle(options: LoadSceneOptions): SceneHandle & { replaceVa
   let hovered: string | null = null, overview: SceneStatus["overview"] = "none", lastError: string | null = null, overviewRequest = 0;
   let layerVisible = new Map<string, boolean>();
   let layerMembers = new Map<string, string[]>();
+  const additionalLinks = new Map<string, readonly LinkRecord[]>();
+  const linksOf = (entry: Entry): readonly LinkRecord[] => [...entry.record.links, ...(additionalLinks.get(entry.record.id) ?? [])];
   let exiting: { published: Candidate | null; promise: Promise<SceneActionResult> } | null = null;
   const listeners = new Set<(status: SceneStatus) => void>(), work = new Set<Promise<unknown>>();
   const track = <T>(promise: Promise<T>): Promise<T> => { work.add(promise); void promise.finally(() => work.delete(promise)).catch(() => {}); return promise; };
@@ -127,7 +129,7 @@ function createSceneHandle(options: LoadSceneOptions): SceneHandle & { replaceVa
         marker: { ...record.marker, radiusMeters: input.placement.radiusMeters, authoredRadius: record.marker.radiusMeters !== undefined },
         capture: input.details?.capture ?? null, pose: { ...record.imagePose, aligned: record.imagePose.aligned ?? null }, attribution: input.credits,
         previewDetail: observations?.previewDetail ?? null, images: observations?.images ?? [],
-        links: record.links.map(link => ({ id: link.id, label: link.label, target: link.target, ...(link.externalDestination ? { externalDestination: link.externalDestination } : {}), enabled: link.externalDestination ? Boolean(options.externalNavigation && scene?.externalDestinations?.has(link.externalDestination)) : Boolean(scene?.spheres.has(link.target)), placed: Boolean(link.direction) })),
+        links: linksOf(entry).map(link => ({ id: link.id, label: link.label, target: link.target, ...(link.externalDestination ? { externalDestination: link.externalDestination } : {}), enabled: link.externalDestination ? Boolean(options.externalNavigation && scene?.externalDestinations?.has(link.externalDestination)) : Boolean(scene?.spheres.has(link.target)), placed: Boolean(link.direction) })),
       };
     });
     return { ...viewer, phase: disposed ? "disposed" : viewer.phase, sceneId: scene?.id ?? "", revision: scene?.revision ?? "", title: scene?.title ?? "", generation, hovered, entries, groups: scene?.groups ?? [], layers: layerStatus(scene?.layers ?? [], true), credits: viewer.credits ?? (viewer.active && current?.entries.get(viewer.active) ? [{ ...current.entries.get(viewer.active)!.input.credits, assetId: current.entries.get(viewer.active)!.input.asset.id }] : []), overview, warnings: scene?.warnings ?? [], renderingAvailable: viewer.renderingAvailable ?? true, unavailableReason: viewer.unavailableReason ?? null, lastError: lastError ?? viewer.lastError ?? null, view: viewer.view ?? null };
@@ -184,6 +186,7 @@ function createSceneHandle(options: LoadSceneOptions): SceneHandle & { replaceVa
       try { options.viewer.replaceImages([...candidate.entries.values()].flatMap(entry => entry.prepared ? [entry.prepared] : [])); }
       catch (error) { current = outgoing; layerVisible = previousLayers; throw error; }
       options.viewer.setMapVisibility(hiddenPanoramaIds(scene));
+      additionalLinks.clear();
       candidate = null; hovered = null; lastError = null; overview = scene.overview ? "pending" : "none";
       if (outgoing) release(outgoing);
       const published = current;
@@ -385,8 +388,34 @@ function createSceneHandle(options: LoadSceneOptions): SceneHandle & { replaceVa
       options.viewer.setMapVisibility(hiddenPanoramaIds(current.scene));
       emit();
       return true;
+    },
+    setAdditionalLinks(entityId, links) {
+      const owner = current, entry = owner?.entries.get(entityId);
+      if (disposed || !owner || !entry || !Array.isArray(links)) return false;
+      const targets = new Set<string>(), ids = new Set(entry.record.links.map(link => link.id));
+      const next: LinkRecord[] = [];
+      for (const link of links) {
+        if (!link || link.target === entityId || !owner.entries.has(link.target) || targets.has(link.target) || typeof link.label !== "string" || !link.label.trim()) return false;
+        targets.add(link.target);
+        if (link.direction && (!Number.isFinite(link.direction.headingDeg) || link.direction.headingDeg < 0 || link.direction.headingDeg >= 360 || !Number.isFinite(link.direction.pitchDeg) || Math.abs(link.direction.pitchDeg) > 90)) return false;
+        if (entry.record.links.some(authored => !authored.externalDestination && authored.target === link.target)) continue;
+        const id = `editor-link-${link.target}`;
+        if (ids.has(id)) return false;
+        ids.add(id);
+        next.push({ id, target: link.target, label: link.label, ...(link.direction ? { direction: { ...link.direction } } : {}) });
+      }
+      const previous = additionalLinks.get(entityId);
+      additionalLinks.set(entityId, next);
+      const actions = linksOf(entry).map(link => ({ id: link.id, label: link.label, ...(link.direction ? { direction: link.direction } : {}), activate: async () => {
+        if (disposed || current !== owner) return false;
+        return (await track(followLink(link, owner, entityId))).ok;
+      } }));
+      try { options.viewer.updateActions?.(entityId, actions); }
+      catch (error) { if (previous) additionalLinks.set(entityId, previous); else additionalLinks.delete(entityId); throw error; }
+      entry.input = { ...entry.input, actions };
+      emit(); return true;
     }, exit: () => track(exit()), showOverview,
-    async follow(id, followOptions = {}) { const active = options.viewer.status().active; const link = active ? current?.entries.get(active)?.record.links.find(item => item.id === id) : undefined; return link && current && active ? track(followLink(link, current, active, followOptions)) : failed("unavailable", `Link "${id}" is not available from the current panorama.`); },
+    async follow(id, followOptions = {}) { const active = options.viewer.status().active; const link = active ? current?.entries.get(active) && linksOf(current.entries.get(active)!).find(item => item.id === id) : undefined; return link && current && active ? track(followLink(link, current, active, followOptions)) : failed("unavailable", `Link "${id}" is not available from the current panorama.`); },
     async replace(input, replaceOptions = {}) {
       if (disposed) return { ok: false, errors: [{ path: "$", message: "The scene is disposed." }] };
       const context = beginReplacement();
@@ -409,7 +438,7 @@ function createSceneHandle(options: LoadSceneOptions): SceneHandle & { replaceVa
     },
     hotspots() {
       const active = options.viewer.status().active;
-      const links = !disposed && options.viewer.status().phase === "immersive" && active ? current?.entries.get(active)?.record.links ?? [] : [];
+      const links = !disposed && options.viewer.status().phase === "immersive" && active ? (current?.entries.get(active) ? linksOf(current.entries.get(active)!) : []) : [];
       return links.flatMap(link => { const point = link.direction && options.projectLink?.(link.direction); return point && (link.externalDestination ? options.externalNavigation && current?.scene.externalDestinations?.has(link.externalDestination) : current?.entries.has(link.target)) ? [{ id: link.id, label: link.label, ...point }] : []; });
     },
     subscribe(listener) { if (!disposed) { listeners.add(listener); if (current) listener(snapshot()); } return () => { listeners.delete(listener); }; },

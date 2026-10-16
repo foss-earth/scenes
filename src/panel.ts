@@ -45,8 +45,8 @@ export interface SceneLookControl {
   fovRange(): { min: number; max: number };
 }
 export interface ScenesPanelContribution extends ScenePanelElement {
-  /** Existing homes supplied by360, images and tiled-cubemap, in their former order. */
-  section: "appearance" | "motion" | "loading" | "tiles" | "saved";
+  /** Scene editing and settings supplied by the host and image owners. */
+  section: "links" | "appearance" | "motion" | "loading" | "tiles" | "saved";
   title: string;
 }
 const PHASE_TEXT: Record<SceneStatus["phase"], string> = { overview: "Overview", preparing: "Preparing", entering: "Entering", immersive: "Inside a panorama", exiting: "Leaving", disposed: "Closed" };
@@ -99,6 +99,9 @@ function previewPicture(document: Document, face: ScenePreviewFace): HTMLElement
 }
 /** Scenes owns Content/Credits; other owners supply their settings at their existing homes. */
 export function createScenesPanel(options: { document: Document; controller: SceneController; ui: ScenesPanelUi; contributions?: readonly ScenesPanelContribution[]; layerArrangement?: SceneLayerArrangement; opening?: SceneOpening; look?: SceneLookControl; previewBackend?: PreviewBackendLoader; externalLinkIcon?(document: Document): HTMLElement | SVGElement }): ScenePanelElement {
+  // Validate before listening or storing, so a rejected panel leaves nothing behind.
+  const contributions = options.contributions ?? [], seen = new Set<string>();
+  for (const contribution of contributions) { if (seen.has(contribution.section)) throw new Error("Scenes section contributions require unique existing homes."); seen.add(contribution.section); }
   const { document, controller } = options;
   const previewBackend = createPreviewBackends({ loadGpu: options.previewBackend });
   const el = <K extends keyof HTMLElementTagNameMap>(tag: K, className?: string, text?: string): HTMLElementTagNameMap[K] => { const node = document.createElement(tag); if (className) node.className = className; if (text !== undefined) node.textContent = text; return node; };
@@ -532,13 +535,11 @@ export function createScenesPanel(options: { document: Document; controller: Sce
       credits.append(line);
     }
   }
-  const contributions = options.contributions ?? [], seen = new Set<string>();
-  for (const contribution of contributions) { if (seen.has(contribution.section)) throw new Error("Scenes section contributions require unique existing homes."); seen.add(contribution.section); }
   const contentSection = options.ui.parameterSection({ tab: SCENES_TAB, section: "content", main: content, showAll: true });
   const creditSection = options.ui.parameterSection({ tab: SCENES_TAB, section: "credits", main: credits, showAll: false });
   const sections = options.ui.sections([
     { id: "scenes.content", title: "Content", element: contentSection.element, defaultOpen: true },
-    ...(["appearance", "motion", "loading", "tiles", "saved"] as const).flatMap(id => { const contribution = contributions.find(item => item.section === id); return contribution ? [{ id: `scenes.${id}`, title: contribution.title, element: contribution.element, defaultOpen: false }] : []; }),
+    ...(["links", "appearance", "motion", "loading", "tiles", "saved"] as const).flatMap(id => { const contribution = contributions.find(item => item.section === id); return contribution ? [{ id: `scenes.${id}`, title: contribution.title, element: contribution.element, defaultOpen: false }] : []; }),
     { id: "scenes.credits", title: "Credits", element: creditSection.element, defaultOpen: false },
   ]);
   let destroyed = false;

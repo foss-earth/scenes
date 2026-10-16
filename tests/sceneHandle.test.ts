@@ -24,6 +24,33 @@ function harness() {
   return { options, viewer, world, history, inputs, images, publications, placements, subscribers, publishStatus };
 }
 describe("scene references and injected owner lifecycle", () => {
+  it("adds live image links to status, hotspots and viewer actions without reloading media", async () => {
+    const host = harness(), updateActions = vi.fn();
+    host.options.viewer.updateActions = updateActions;
+    const document = fixtureDocument();
+    (document.entities as { id: string; links: unknown[] }[]).find(e => e.id === "courtyard")!.links = [];
+    const result = await loadScene(document, host.options); if (!result.ok) throw new Error("fixture");
+    await result.handle.whenSettled();
+    const prepared = host.viewer.prepare.mock.calls.length;
+    const link = { target: "garden", label: "Return to garden", direction: { headingDeg: 180, pitchDeg: 0 } };
+    expect(result.handle.setAdditionalLinks("courtyard", [link])).toBe(true);
+    await result.handle.enter("courtyard");
+    expect(result.handle.status.entries.find(e => e.id === "courtyard")?.links).toContainEqual(expect.objectContaining({ id: "editor-link-garden", target: "garden", placed: true }));
+    expect(result.handle.hotspots()).toContainEqual({ id: "editor-link-garden", label: "Return to garden", x: 5, y: 10 });
+    expect(await result.handle.follow("editor-link-garden")).toEqual({ ok: true });
+    expect(host.viewer.enter).toHaveBeenLastCalledWith("garden", expect.any(Object));
+    expect(updateActions).toHaveBeenCalledWith("courtyard", expect.arrayContaining([expect.objectContaining({ id: "editor-link-garden" })]));
+    expect(host.viewer.prepare).toHaveBeenCalledTimes(prepared);
+    expect(result.handle.setAdditionalLinks("courtyard", [{ ...link, target: "missing" }])).toBe(false);
+    expect(result.handle.setAdditionalLinks("courtyard", [{ ...link, target: "courtyard" }])).toBe(false);
+    expect(result.handle.setAdditionalLinks("courtyard", [{ ...link, direction: { headingDeg: NaN, pitchDeg: 0 } }])).toBe(false);
+    expect(result.handle.setAdditionalLinks("courtyard", [])).toBe(true);
+    expect(result.handle.status.entries.find(e => e.id === "courtyard")?.links.some(l => l.id === "editor-link-garden")).toBe(false);
+    const authored = host.inputs[0].actions.length;
+    expect(result.handle.setAdditionalLinks("garden", [{ target: "courtyard", label: "Already authored" }])).toBe(true);
+    expect(result.handle.status.entries[0].links).toHaveLength(authored);
+    result.handle.dispose(); expect(result.handle.setAdditionalLinks("garden", [])).toBe(false);
+  });
   it("validates before any owner call, keeps missing ground explicit and publishes ready entries progressively", async () => {
     const host = harness(), invalid = fixtureDocument(); invalid.version = 2;
     expect(await loadScene(invalid, host.options)).toMatchObject({ ok: false }); expect(host.viewer.prepare).not.toHaveBeenCalled();
