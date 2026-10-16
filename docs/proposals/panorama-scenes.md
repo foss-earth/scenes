@@ -1323,6 +1323,18 @@ earlier run saw 71 m during the fast near/far sweep. Holding
 the marker until the terrain under it is final belongs with stage 2's placement
 work.
 
+**Changed 2026-10-16.** Scenes that can be prepared no longer use ground-relative
+markers. The UMN-VR tour scenes carry a fixed `capture.height` from the engine's
+build-time `foss-earth-prepare-heights` (Google 3D geometry first, a recorded USGS
+fallback otherwise). Their markers are `capture-relative`, and the app never samples
+the map for them. For a remaining ground-relative marker, the app now uses the first
+surface answer and keeps it; map detail arriving later no longer moves the orb, and
+only an edit samples again. That first answer can come from coarse or flat tiles
+that are still loading, and the orb then stays at that height until the page is
+reloaded. The app's own ground-relative examples (`umn-single`, `umn-cardinal`,
+`campus-pair`) are exposed to this; giving them prepared heights is the fix. See the
+engine's `docs/height-preparation.md`.
+
 **After the first user trial.**
 
 - **Drag inside a panorama:** the view moved only on release, jumped there, and
