@@ -1,9 +1,35 @@
+import { imagePoseMatrix, transpose3, mulMat3, type Mat3 } from "@foss-earth/images";
+import { CUBE_FACE_NAMES, sourceCubeLookup } from "@foss-earth/sphere-cubemap";
 import type { LinkRecord, ResolvedSphere, ValidatedScene } from "./format.js";
 import { resolveSceneInput, type SceneInput } from "./manifest.js";
 import type { SceneHistoryEntry } from "./history.js";
 import type { LoadSceneOptions, LoadSceneResult, SceneActionResult, SceneEntryStatus, SceneHandle, SceneLayerStatus, ScenePlacement, ScenePreparedImage, SceneStatus, SceneViewerImageInput, SceneViewerStatus } from "./ports.js";
 
 const failed = (reason: Exclude<SceneActionResult, { ok: true }>["reason"], message: string): SceneActionResult => ({ ok: false, reason, message });
+const whole = (value: unknown): value is number => typeof value === "number" && Number.isSafeInteger(value);
+/** Heading 0 and pitch 0 look along +Y. The still shows whichever face that ray meets after the photograph's content rotation. */
+function stillFaceIndex(content: Mat3): number {
+  const index = CUBE_FACE_NAMES.indexOf(sourceCubeLookup(mulMat3(content, [0, 1, 0])).face);
+  return index < 0 ? 2 : index;
+}
+function previewFaceOf(asset: SceneViewerImageInput["asset"], content: Mat3): SceneEntryStatus["previewFace"] {
+  let best: { faceSize: number; url: string; sheetWidth: number; sheetHeight: number; x: number; y: number; originX: number } | null = null;
+  const faceIndex = stillFaceIndex(content);
+  for (const rep of asset.representations) {
+    if (!rep || typeof rep !== "object") continue;
+    const record = rep as { projection?: unknown; role?: unknown; faceSize?: unknown; sheet?: unknown };
+    if (record.projection !== "cube" || record.role !== "preview" || !record.sheet || typeof record.sheet !== "object") continue;
+    const faceSize = record.faceSize;
+    const sheet = record.sheet as { url?: unknown; x?: unknown; y?: unknown; width?: unknown; height?: unknown };
+    if (!whole(faceSize) || faceSize < 1 || typeof sheet.url !== "string" || !sheet.url) continue;
+    if (!whole(sheet.x) || !whole(sheet.y) || !whole(sheet.width) || !whole(sheet.height)) continue;
+    const originX = sheet.x;
+    const x = originX + faceIndex * faceSize;
+    if (originX < 0 || sheet.y < 0 || originX + 6 * faceSize > sheet.width || sheet.y + faceSize > sheet.height) continue;
+    if (!best || faceSize < best.faceSize) best = { faceSize, url: sheet.url, sheetWidth: sheet.width, sheetHeight: sheet.height, x, y: sheet.y, originX };
+  }
+  return best ? { url: best.url, sheetWidth: best.sheetWidth, sheetHeight: best.sheetHeight, x: best.x, y: best.y, size: best.faceSize, originX: best.originX, content } : null;
+}
 const messageOf = (error: unknown): string => error instanceof Error ? error.message : String(error);
 interface Entry { record: ResolvedSphere; input: SceneViewerImageInput; placement: ScenePlacement; prepared: ScenePreparedImage | null; preview: SceneEntryStatus["preview"]; message: string | null; offPlacement: (() => void) | null }
 interface Candidate { scene: ValidatedScene; entries: Map<string, Entry>; scope: AbortController }
@@ -23,6 +49,7 @@ function createSceneHandle(options: LoadSceneOptions): SceneHandle & { replaceVa
   let current: Candidate | null = null, disposed = false, generation = 0, pending: AbortController | null = null;
   let hovered: string | null = null, overview: SceneStatus["overview"] = "none", lastError: string | null = null, overviewRequest = 0;
   let layerVisible = new Map<string, boolean>();
+  let layerMembers = new Map<string, string[]>();
   let exiting: { published: Candidate | null; promise: Promise<SceneActionResult> } | null = null;
   const listeners = new Set<(status: SceneStatus) => void>(), work = new Set<Promise<unknown>>();
   const track = <T>(promise: Promise<T>): Promise<T> => { work.add(promise); void promise.finally(() => work.delete(promise)).catch(() => {}); return promise; };
@@ -40,7 +67,7 @@ function createSceneHandle(options: LoadSceneOptions): SceneHandle & { replaceVa
     walkLayers(scene.layers, true, (layer, shown) => {
       if (layer.kind !== "panoramas") return;
       drawsPanoramas = true;
-      for (const id of layer.members ?? []) { covered.add(id); if (shown) showing.add(id); }
+      for (const id of layerMembers.get(layer.id) ?? []) { covered.add(id); if (shown) showing.add(id); }
     });
     return drawsPanoramas ? [...covered].filter(id => !showing.has(id)) : [];
   };
@@ -54,15 +81,25 @@ function createSceneHandle(options: LoadSceneOptions): SceneHandle & { replaceVa
   };
   const adoptLayers = (scene: ValidatedScene): void => {
     const next = new Map<string, boolean>();
-    walkLayers(scene.layers, true, layer => next.set(layer.id, layer.visible !== false));
+    const members = new Map<string, string[]>();
+    const collect = (layers: readonly ValidatedScene["layers"][number][]): void => {
+      for (const layer of layers) {
+        next.set(layer.id, layer.visible !== false);
+        if (layer.kind === "panoramas") members.set(layer.id, [...(layer.members ?? [])]);
+        if (layer.layers) collect(layer.layers);
+      }
+    };
+    collect(scene.layers);
     layerVisible = next;
+    layerMembers = members;
   };
   const layerStatus = (layers: readonly ValidatedScene["layers"][number][], ancestorShown: boolean): SceneLayerStatus[] => layers.map(layer => {
     const visible = layerVisible.get(layer.id) !== false;
     const shown = ancestorShown && visible;
     return {
       id: layer.id, title: layer.title, ...(layer.kind ? { kind: layer.kind } : {}), visible, shown, enabled: ancestorShown,
-      drawn: layer.kind === "panoramas", layers: layerStatus(layer.layers ?? [], shown),
+      drawn: layer.kind === "panoramas", members: layer.kind === "panoramas" ? [...(layerMembers.get(layer.id) ?? [])] : [],
+      layers: layerStatus(layer.layers ?? [], shown),
     };
   });
   const report = (entry: Entry | null, kind: "preview" | "navigation", error: unknown): void => {
@@ -86,7 +123,7 @@ function createSceneHandle(options: LoadSceneOptions): SceneHandle & { replaceVa
       const { record, input } = entry, observations = options.describeImage?.(id);
       return {
         id, title: record.title, description: record.description ?? null, supported: true, message: entry.message ?? entry.placement.message ?? null,
-        placement: entry.placement.state, preview: entry.preview,
+        placement: entry.placement.state, preview: entry.preview, previewFace: previewFaceOf(entry.input.asset, entry.placement.previewContent ?? transpose3(imagePoseMatrix(record.imagePose))),
         marker: { ...record.marker, radiusMeters: input.placement.radiusMeters, authoredRadius: record.marker.radiusMeters !== undefined },
         capture: input.details?.capture ?? null, pose: { ...record.imagePose, aligned: record.imagePose.aligned ?? null }, attribution: input.credits,
         previewDetail: observations?.previewDetail ?? null, images: observations?.images ?? [],
@@ -328,6 +365,23 @@ function createSceneHandle(options: LoadSceneOptions): SceneHandle & { replaceVa
       if (!layer) return false;
       if ((layerVisible.get(id) !== false) === visible) return true;
       layerVisible.set(id, visible);
+      options.viewer.setMapVisibility(hiddenPanoramaIds(current.scene));
+      emit();
+      return true;
+    },
+    movePanorama(entityId, layerId) {
+      if (disposed || !current || !current.scene.spheres.has(entityId)) return false;
+      const target = findLayer(current.scene.layers, layerId);
+      if (!target || target.kind !== "panoramas") return false;
+      const homes = [...layerMembers.entries()].filter(([, members]) => members.includes(entityId)).map(([id]) => id);
+      if (homes.length === 1 && homes[0] === layerId) return true;
+      for (const [id, members] of layerMembers) {
+        if (id === layerId) continue;
+        const next = members.filter(member => member !== entityId);
+        if (next.length !== members.length) layerMembers.set(id, next);
+      }
+      const destination = layerMembers.get(layerId) ?? [];
+      if (!destination.includes(entityId)) layerMembers.set(layerId, [...destination, entityId]);
       options.viewer.setMapVisibility(hiddenPanoramaIds(current.scene));
       emit();
       return true;

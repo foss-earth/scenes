@@ -49,6 +49,8 @@ export interface SceneViewerPorts {
   hover(id: string | null): void;
 }
 export interface ScenePlacement {
+  /** Local heading/pitch directions to image directions, independent of world coordinates. */
+  previewContent?: Mat3;
   placement: SceneViewerImageInput["placement"];
   state: "pending" | "placed" | "unavailable";
   message?: string | null;
@@ -59,9 +61,25 @@ export interface SceneWorldPorts {
   watchPlacement?(entity: ResolvedSphere, options: { radiusMeters: number }, changed: (placement: ScenePlacement) => void): () => void;
   showOverview(overview: OverviewRecord, options: { signal?: AbortSignal }): Promise<{ ok: true; state: "pending" | "applied" } | Exclude<SceneActionResult, { ok: true }>>;
 }
+/** One face of a photograph's preview, cropped from a shared sheet. */
+export interface ScenePreviewFace {
+  url: string;
+  sheetWidth: number;
+  sheetHeight: number;
+  /** The still thumbnail's face, in sheet pixels. */
+  x: number;
+  y: number;
+  size: number;
+  /** Left edge of the px face. The six faces run px nx py ny pz nz from here. */
+  originX?: number;
+  /** Local heading/pitch direction to image direction. Absent is identity. */
+  content?: Mat3;
+}
 export interface SceneEntryStatus {
   id: string; title: string; description: string | null; supported: boolean; message: string | null;
   placement: "pending" | "placed" | "unavailable"; preview: "idle" | "loading" | "ready" | "failed";
+  /** Absent when this scene has no shared preview sheet for the photograph. */
+  previewFace?: ScenePreviewFace | null;
   marker: { mode: "ground-relative" | "capture-relative"; eastM: number; northM: number; offsetM: number; radiusMeters: number; authoredRadius: boolean } | null;
   capture: { longitudeDeg: number; latitudeDeg: number; heightMeters: number | null; horizontalAccuracyMeters: number | null } | null;
   pose: { headingDeg: number; pitchDeg: number; rollDeg: number; aligned: boolean | null } | null;
@@ -89,6 +107,8 @@ export interface SceneLayerStatus {
   enabled: boolean;
   /** Panorama orbs follow this. Feature lines are kept and not drawn. */
   drawn: boolean;
+  /** Photographs in a panoramas layer, in display order. Empty for a grouping layer. */
+  members: readonly string[];
   layers: readonly SceneLayerStatus[];
 }
 export interface SceneStatus extends SceneViewerStatus {
@@ -102,6 +122,11 @@ export interface SceneHandle {
   enter(id: string, options?: { signal?: AbortSignal; view?: ViewRecord }): Promise<SceneActionResult>;
   /** Shows or hides one map layer. False when the scene has no such layer. */
   setLayerVisible(id: string, visible: boolean): boolean;
+  /**
+   * Moves one photograph into a panoramas layer. It leaves every other panoramas
+   * layer. False when the photograph or the layer is not in this scene.
+   */
+  movePanorama(entityId: string, layerId: string): boolean;
   follow(linkId: string, options?: { signal?: AbortSignal }): Promise<SceneActionResult>;
   exit(): Promise<SceneActionResult>;
   replace(input: SceneInput, options?: { baseUrl?: string | URL; signal?: AbortSignal }): Promise<{ ok: true } | { ok: false; errors: readonly SceneDiagnostic[] }>;

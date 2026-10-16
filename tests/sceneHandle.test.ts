@@ -199,7 +199,32 @@ describe("actual viewer navigation settlement", () => {
     expect(host.viewer.setMapVisibility).toHaveBeenLastCalledWith(["garden"]);
     expect(result.handle.status.layers[0].layers[0].enabled).toBe(false);
     expect(result.handle.setLayerVisible("missing", true)).toBe(false);
+    expect(result.handle.movePanorama("garden", "indoor-360")).toBe(true);
+    expect(result.handle.status.layers[0].layers[0].members).toEqual([]);
+    expect(result.handle.status.layers[1].layers[0].members).toEqual(["courtyard", "garden"]);
+    expect(host.viewer.setMapVisibility).toHaveBeenLastCalledWith([]);
+    expect(result.handle.movePanorama("garden", "missing")).toBe(false);
     result.handle.dispose();
     expect(host.viewer.setMapVisibility).toHaveBeenLastCalledWith([]);
   });
+});
+
+it("passes local preview orientation through status and live placement updates", async () => {
+  const host = harness();
+  const original = host.world.resolvePlacement;
+  host.world.resolvePlacement = (entity, options) => ({ ...original(entity, options), previewContent: [[1, 0, 0], [0, 1, 0], [0, 0, 1]] });
+  // The host's resolved preview-sheet owner supplies these sheet coordinates.
+  const prepare = host.viewer.prepare.getMockImplementation()!;
+  host.viewer.prepare.mockImplementation((input, signal) => {
+    Object.assign(input.asset.representations[0]!, { projection: "cube", faceSize: 64, sheet: { url: "https://photos.example/sheet.jpg", x: 0, y: 0, width: 384, height: 64 } });
+    return prepare(input, signal);
+  });
+  const result = await loadScene(fixtureDocument(), host.options);
+  if (!result.ok) throw Error("fixture");
+  await result.handle.whenSettled();
+  expect(result.handle.status.entries[0].previewFace?.content).toEqual([[1, 0, 0], [0, 1, 0], [0, 0, 1]]);
+  expect(result.handle.status.entries[0].previewFace?.x).toBe(128);
+  host.placements.get("garden")!({ placement: host.inputs[0].placement, state: "placed", previewContent: [[0, -1, 0], [1, 0, 0], [0, 0, 1]] });
+  expect(result.handle.status.entries[0].previewFace?.content).toEqual([[0, -1, 0], [1, 0, 0], [0, 0, 1]]);
+  result.handle.dispose();
 });

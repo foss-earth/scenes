@@ -31,25 +31,177 @@
   font-size: 12px;
 }
 
-.foss-earth-scene-entry {
-  display: inline-block;
+.foss-earth-scene-card {
+  order: 1;
+  display: inline-flex;
   max-width: 100%;
 }
 
-.foss-earth-scene-entry[open] {
-  flex-basis: 100%;
+.foss-earth-scene-card.is-expanded {
+  order: 0;
+  flex: 0 0 88px;
+  width: 88px;
 }
 
-.foss-earth-scene-entry__summary {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+.foss-earth-scene-card .foss-earth-scene-entry__open,
+.foss-earth-scene-card .foss-earth-scene-entry__title {
+  padding: 0;
+  min-height: 0;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.foss-earth-scene-entry__open {
+  display: block;
+  width: 100%;
+  color: inherit;
+  font: inherit;
+  text-align: inherit;
   cursor: pointer;
 }
 
-.foss-earth-scene-entry__state {
-  font-size: 11px;
-  opacity: 0.72;
+.foss-earth-scene-entry__open:has(.foss-earth-scene-entry__picture) {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+
+.foss-earth-scenes .foss-earth-scene-entry__title {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: auto;
+  z-index: 3;
+  max-width: calc(100% - 16px);
+  line-height: 16px;
+  border: 0;
+  border-radius: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+  background: #0f172a;
+  color: #fff;
+  border-color: transparent;
+}
+
+.foss-earth-scene-tools {
+  flex-basis: 100%;
+  align-items: center;
+}
+
+.foss-earth-scene-tools__group {
+  display: flex;
+  flex-basis: 100%;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.foss-earth-scene-tools__label {
+  font-size: 12px;
+}
+
+.foss-earth-scene-tools .foss-earth-choice[aria-pressed="true"] {
+  border-color: var(--globe-accent, #60a5fa);
+}
+
+.foss-earth-scene-entry__frame {
+  position: relative;
+  display: block;
+  width: 100%;
+}
+
+.foss-earth-scene-entry__picture {
+  display: block;
+  width: 100%;
+  height: 88px;
+  border-radius: 8px;
+  background-color: rgba(15, 23, 42, 0.35);
+  background-repeat: no-repeat;
+}
+
+.foss-earth-scene-entry__mark {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 1;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #0f172a;
+  pointer-events: none;
+}
+
+.foss-earth-scene-card.is-expanded .foss-earth-scene-entry__frame {
+  width: 100%;
+  height: 88px;
+}
+
+.foss-earth-scene-entry__viewer,
+.foss-earth-scene-entry__viewer iframe,
+.foss-earth-mini {
+  width: 100%;
+  height: 100%;
+}
+
+.foss-earth-scene-entry__viewer,
+.foss-earth-mini {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border: 0;
+  border-radius: 8px;
+  background: #0b1220;
+}
+
+.foss-earth-scene-entry__snapshot {
+  display: block;
+  width: 88px;
+  height: 88px;
+  border-radius: inherit;
+}
+
+.foss-earth-scene-entry__viewer {
+  background: transparent;
+}
+
+.foss-earth-scene-card.is-expanded .foss-earth-scene-entry__mark {
+  top: 0;
+  right: 0;
+  left: auto;
+  z-index: 3;
+}
+
+.foss-earth-scene-entry__mark[data-state="ready"] {
+  color: #3dd68c;
+}
+
+.foss-earth-scene-entry__mark[data-state="ready"] svg {
+  width: 12px;
+  height: 12px;
+}
+
+.foss-earth-scene-entry__mark[data-state="loading"] {
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  background: #0f172a;
+  animation: foss-earth-scene-spin 0.8s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .foss-earth-scene-entry__mark[data-state="loading"] {
+    animation: none;
+  }
+}
+
+@keyframes foss-earth-scene-spin {
+  to { transform: rotate(360deg); }
 }
 
 /* Link buttons sit where their direction is in the sphere. */
@@ -86,6 +238,39 @@
 }
 
 
+.foss-earth-scene-group-heading {
+  display: flex;
+  flex: 1 1 100%;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+}
+
+.foss-earth-scene-group-heading > .foss-earth-scene-layer,
+.foss-earth-scene-group-heading > .foss-earth-choices__heading {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.foss-earth-scene-group-toggle {
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+
+.foss-earth-scene-layer-group,
+.foss-earth-scene-stop {
+  display: flex;
+  flex: 1 1 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  border-radius: 10px;
+}
+
 .foss-earth-scene-layer {
   display: flex;
   flex-basis: 100%;
@@ -94,5 +279,57 @@
   font-size: 12px;
 }
 
+.foss-earth-scene-layer.is-drop,
+.foss-earth-scene-layer-members.is-drop {
+  outline: 1px dashed var(--globe-accent, #60a5fa);
+  border-radius: 8px;
+}
+
+.foss-earth-scene-layer-members {
+  display: flex;
+  flex-basis: 100%;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.foss-earth-scene-stop > .foss-earth-choices__heading {
+  flex-basis: 100%;
+  font-size: 12px;
+}
+
+:root[data-theme="light"] .foss-earth-scene-entry__mark {
+  background: #fff;
+}
+
+:root[data-theme="light"] .foss-earth-scene-entry__mark[data-state="ready"] {
+  color: #15803d;
+}
+
+:root[data-theme="light"] .foss-earth-scene-entry__mark[data-state="loading"] {
+  border-color: rgba(15, 23, 42, 0.25);
+  border-top-color: #0f172a;
+  background: #fff;
+}
+
+.foss-earth-scene-layer-actions {
+  display: flex;
+  flex-basis: 100%;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.foss-earth-scene-layer-export {
+  flex-basis: 100%;
+  margin: 0;
+  max-height: 12em;
+  overflow: auto;
+  white-space: pre-wrap;
+  font-size: 11px;
+}
+
 /* Shared UI supplies paragraph-grid choices and base control styles. */
-.foss-earth-scene-entry__summary { flex-wrap: wrap; }
+
+.foss-earth-scene-entry__mark[hidden] { display: none; }
+.foss-earth-scenes .is-indicator-hidden .foss-earth-scene-entry__title { max-width: 100%; }
