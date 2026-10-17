@@ -1167,10 +1167,11 @@ rendered device pixels are different units. A range means one two-thumb control.
 | `cacheMiB` | MiB, 0–1024 | 32; bounded enabled experiment | Cache; allocated/used estimates |
 | `cacheSizeRange` | output px range, 16–min(2048, device limit) | [32,256]; overview-scale outputs | Cache; output dimensions; quality comparison |
 | `cacheRefreshTexels` | texels/frame, 0–16777216 | 262144; four 256² outputs | Cache; texels/time; direct fallback |
-| `verticalFovRange` | deg range, 10–179 | [20,120], as the user asked (was [35,90] within 20–120) | 360 image settings → Looking; current/limited FOV |
+| `verticalFovRange` | deg range, 10–150 | [20,140], as the user asked | 360 image settings → Looking; current/limited FOV |
 | `pitchRange` | deg range, −89.9–89.9 | [−85,85]; avoid look-axis degeneracy | 360 image settings → Looking; current pitch; pole-content trial |
+| `showAnchors` | boolean | Off; optional map-style grab and zoom markers in the panorama and interactive previews | 360 image settings → Looking; projected gesture point and glide state |
 | `entryOrientation` | level-current / authored | level-current; preserve azimuth, level pitch | 360 image settings → Entering; target/provenance |
-| `entryFov` | deg, 10–179, or the map's | 100, as the user asked (was the map camera's FOV); a scene's view brings its own | 360 image settings → Entering ("Field of view"); arrival FOV within the zoom range |
+| `entryFov` | deg, 10–150, or the map's | 100, as the user asked (was the map camera's FOV); a scene's view brings its own | 360 image settings → Entering ("Field of view"); arrival FOV within the zoom range |
 | `flightDuration` | ms, 100–5000, or Off | 1000, on as the user asked; long enough to follow, short enough not to wait on | Scenes → Motion ("Fly into and out of 360 images"); phase; motion trial |
 | `expandDuration` | ms, 0–2000 | 350; short reveal prototype, when the camera does not fly in | Scenes → Motion; phase/progress; motion trial |
 | `orientDuration` | ms, 0–2000 | 250; separate leveling phase | 360 image settings → Entering; current/target orientation |
@@ -1178,8 +1179,8 @@ rendered device pixels are different units. A range means one two-thumb control.
 | `hoverDuration` | ms, 0–1000 | 120; growth under the pointer, when the scene's style asks | Scenes → Motion; visual check |
 | `reducedMotion` | system / reduce | system; respect OS, allow stricter user choice | Scenes → Motion; effective state |
 | `reducedFadeDuration` | ms, 0–250 | 0; cut avoids animation | Scenes → Motion; effective duration |
-| `dragSensitivity` | deg/CSS px, 0.01–2 | 0.15; starting pointer gain | 360 image settings → Looking; angular response; user trial |
-| `swipeSensitivity` | deg/CSS px of scroll, 0.01–2 | 0.15; as dragging, in trackpad mode | 360 image settings → Looking; angular response; user trial |
+| `dragSensitivity` | deg/CSS px, 0.01–2 | 0.15; fallback when the viewport is unmeasured; measured drags keep the image under the pointer | 360 image settings → Looking; anchored image response |
+| `swipeSensitivity` | deg/CSS px of scroll, 0.01–2 | 0.15; fallback when the viewport is unmeasured; measured swipes move the image one to one in trackpad mode | 360 image settings → Looking; anchored image response |
 | `lookRate` | deg/s, 1–360 | 90; key/full gamepad rate | 360 image settings → Looking; actual rate |
 | `zoomPerNotch` | log-tangent-FOV fraction/notch, 0.01–1 | 0.1; multiplicative wheel change | 360 image settings → Looking; actual FOV |
 | `zoomRate` | log-tangent-FOV fraction/s, 0.01–4 | 0.5; held key/gamepad zoom | 360 image settings → Looking; rate |

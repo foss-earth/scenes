@@ -30,13 +30,13 @@ export const DEFAULT_MINI_NAVIGATION: MiniNavigation = {
   zoomPerNotch: 0.1,
   pinchGain: 1,
   pitch: { min: -85, max: 85 },
-  fov: { min: 20, max: 120 },
+  fov: { min: 20, max: 140 },
 };
 
 /** Backing-store long side. The iframe scales this up; the sheet faces are 64 px. */
 const MAX_EDGE = 280;
 
-export type MiniInput = Pick<LookInputOptions, "createWheelGestureClassifier" | "inputMode" | "safariGestures" | "controlTakesKey">;
+export type MiniInput = Pick<LookInputOptions, "createWheelGestureClassifier" | "inputMode" | "safariGestures" | "controlTakesKey" | "anchorMarkers">;
 
 export interface MiniViewer {
   readonly id: string;
