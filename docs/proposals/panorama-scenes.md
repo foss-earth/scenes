@@ -1180,7 +1180,7 @@ rendered device pixels are different units. A range means one two-thumb control.
 | `reducedMotion` | system / reduce | system; respect OS, allow stricter user choice | Scenes → Motion; effective state |
 | `reducedFadeDuration` | ms, 0–250 | 0; cut avoids animation | Scenes → Motion; effective duration |
 | `dragSensitivity` | deg/CSS px, 0.01–2 | 0.15; fallback when the viewport is unmeasured; measured drags keep the image under the pointer | 360 image settings → Looking; anchored image response |
-| `swipeSensitivity` | deg/CSS px of scroll, 0.01–2 | 0.15; fallback when the viewport is unmeasured; measured swipes move the image one to one in trackpad mode | 360 image settings → Looking; anchored image response |
+| `swipeSensitivity` | deg/CSS px of scroll, 0.01–2 | 0.15; as dragging, in trackpad mode | 360 image settings → Looking; angular response; user trial |
 | `lookRate` | deg/s, 1–360 | 90; key/full gamepad rate | 360 image settings → Looking; actual rate |
 | `zoomPerNotch` | log-tangent-FOV fraction/notch, 0.01–1 | 0.1; multiplicative wheel change | 360 image settings → Looking; actual FOV |
 | `zoomRate` | log-tangent-FOV fraction/s, 0.01–4 | 0.5; held key/gamepad zoom | 360 image settings → Looking; rate |
