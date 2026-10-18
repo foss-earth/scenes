@@ -4,7 +4,8 @@ import { createScenesPanel } from "../src/panel.js";
 import type { SceneController, SceneControllerState, SceneEntryStatus, SceneHandle, SceneLayerStatus, SceneStatus } from "../src/browser.js";
 
 const key = "foss-earth.scene-panel.v1:/tour/twin-cities/";
-function browser(raw?: string) {
+/** A page with the panel; with `shown: false` it is off screen, as in a closed tab. */
+function browser(raw?: string, { shown = true }: { shown?: boolean } = {}) {
   const dom = new JSDOM("<main></main>", { url: "https://example.com/tour/twin-cities/" });
   if (raw) dom.window.localStorage.setItem(key, raw);
   let state: SceneControllerState = { loading: null, status: null, errors: [] };
@@ -23,8 +24,8 @@ function browser(raw?: string) {
   } as unknown as SceneController;
   const ui = { parameterSection: ({ main }: { main: HTMLElement }) => ({ element: main, destroy() {} }),
     sections(items: readonly { element: HTMLElement }[]) { const element = dom.window.document.createElement("div"); element.append(...items.map(item => item.element)); return { element, destroy() {} }; } };
-  const panel = createScenesPanel({ document: dom.window.document, controller, ui });
-  dom.window.document.querySelector("main")!.append(panel.element);
+  const panel = createScenesPanel({ document: dom.window.document, controller, ui, shown });
+  if (shown) dom.window.document.querySelector("main")!.append(panel.element);
   const load = () => {
     const entry = (id: string): SceneEntryStatus => ({ id, title: id, supported: true, placement: "placed", preview: "ready", description: null, message: null, marker: null, capture: null, pose: null, attribution: null, previewDetail: null, images: [], links: [] });
     const child = (id: string, members: string[]): SceneLayerStatus => ({ id: `${id}-360`, title: "360 images", kind: "panoramas", members, layers: [], visible: true, shown: true, enabled: true, drawn: true });
@@ -37,7 +38,7 @@ function browser(raw?: string) {
   const tick = (label: string, value: boolean) => { const box = checkbox(label); box.checked = value; box.dispatchEvent(new dom.window.Event("change")); };
   const press = (label: string) => [...panel.element.querySelectorAll("button")].find(button => button.getAttribute("aria-label") === label || button.textContent === label)!.click();
   const expanded = () => [...panel.element.querySelectorAll<HTMLElement>(".foss-earth-scene-card.is-expanded")].map(card => card.dataset.sphere).sort();
-  return { dom, panel, controller, load, tick, checkbox, press, expanded, setLayerVisible,
+  return { dom, panel, controller, load, tick, checkbox, press, expanded, setLayerVisible, handle,
     reloadData() { dom.window.dispatchEvent(new dom.window.Event("pagehide")); return dom.window.localStorage.getItem(key)!; },
     destroy() { panel.destroy(); dom.window.close(); },
   };
@@ -82,4 +83,31 @@ it("keeps all-minimized groups minimized across reloads and reads existing photo
     expect(next.expanded()).toEqual([]);
     expect(next.checkbox("Outdoor").checked).toBe(true);
   } finally { next?.destroy(); first.destroy(); }
+});
+it("keeps restoring and saving a scene's panel while it is off screen, and lists the scene once shown", () => {
+  const saved = JSON.stringify({ version: 1, scenes: { tour: { grouping: "stops", expanded: ["b"], active: "b", looks: {}, layers: { outdoor: false } } } });
+  const page = browser(saved, { shown: false });
+  try {
+    page.load();
+    expect(page.panel.element.querySelector(".foss-earth-scene-card")).toBeNull();
+    expect(page.setLayerVisible).toHaveBeenCalledWith("outdoor", false);
+    page.handle.setLayerVisible("indoor", false);
+    const kept = JSON.parse(page.reloadData()).scenes.tour;
+    expect(kept).toMatchObject({ grouping: "stops", expanded: ["b"], active: "b", layers: { outdoor: false, indoor: false } });
+    page.panel.setShown(true);
+    expect(page.expanded()).toEqual(["b"]);
+    expect(page.checkbox("Outdoor").checked).toBe(false);
+    expect(page.checkbox("Indoor").checked).toBe(false);
+    page.panel.setShown(false);
+    page.load();
+    expect(page.panel.element.querySelector(".foss-earth-scene-entry__title, .foss-earth-scene-card")).not.toBeNull(); // The last list stays, unchanged, until shown.
+  } finally { page.destroy(); }
+});
+it("lists the scene in a panel that a host puts on the page without saying it is shown", () => {
+  const page = browser(undefined, { shown: false });
+  try {
+    page.dom.window.document.querySelector("main")!.append(page.panel.element);
+    page.load();
+    expect(page.panel.element.querySelectorAll(".foss-earth-scene-card")).toHaveLength(3);
+  } finally { page.destroy(); }
 });

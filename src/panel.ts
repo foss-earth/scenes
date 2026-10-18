@@ -44,6 +44,14 @@ export interface SceneLookControl {
   pitchRange(): { min: number; max: number };
   fovRange(): { min: number; max: number };
 }
+/** The scenes panel, which a host tells when its tab opens and closes. */
+export interface ScenesPanel extends ScenePanelElement {
+  /**
+   * Whether the panel is on screen. While it is not, it keeps its saved state but does not rebuild its list on
+   * each change of the scene, which during loading is many times a second; it rebuilds once when shown again.
+   */
+  setShown(shown: boolean): void;
+}
 export interface ScenesPanelContribution extends ScenePanelElement {
   /** Scene editing and settings supplied by the host and image owners. */
   section: "links" | "appearance" | "motion" | "loading" | "tiles" | "saved";
@@ -98,7 +106,9 @@ function previewPicture(document: Document, face: ScenePreviewFace): HTMLElement
   return node;
 }
 /** Scenes owns Content/Credits; other owners supply their settings at their existing homes. */
-export function createScenesPanel(options: { document: Document; controller: SceneController; ui: ScenesPanelUi; contributions?: readonly ScenesPanelContribution[]; layerArrangement?: SceneLayerArrangement; opening?: SceneOpening; look?: SceneLookControl; previewBackend?: PreviewBackendLoader; externalLinkIcon?(document: Document): HTMLElement | SVGElement }): ScenePanelElement {
+export function createScenesPanel(options: { document: Document; controller: SceneController; ui: ScenesPanelUi; contributions?: readonly ScenesPanelContribution[]; layerArrangement?: SceneLayerArrangement; opening?: SceneOpening; look?: SceneLookControl; previewBackend?: PreviewBackendLoader; externalLinkIcon?(document: Document): HTMLElement | SVGElement;
+  /** Whether the panel starts on screen; true when absent. A host that passes false calls setShown when it opens. */
+  shown?: boolean }): ScenesPanel {
   // Validate before listening or storing, so a rejected panel leaves nothing behind.
   const contributions = options.contributions ?? [], seen = new Set<string>();
   for (const contribution of contributions) { if (seen.has(contribution.section)) throw new Error("Scenes section contributions require unique existing homes."); seen.add(contribution.section); }
@@ -259,6 +269,22 @@ export function createScenesPanel(options: { document: Document; controller: Sce
     for (const error of state.errors.slice(0, 12)) messages.append(note(`${error.path}: ${error.message}`));
     if (state.errors.length > 12) messages.append(note(`and ${state.errors.length - 12} more problems.`));
   }
+  /** Takes up the saved state of a newly loaded scene. False, with nothing kept, when no scene is loaded. */
+  function adoptScope(status: SceneStatus | null): status is SceneStatus {
+    if (!status || status.phase === "disposed") { clearPreviews(); previewScope = null; expandedId = null; expandedIds.clear(); return false; }
+    const scope = `${status.sceneId}:${status.generation}`;
+    if (scope === previewScope) return true;
+    clearPreviews(); previewScope = scope;
+    const saved = savedPanel.get(status.sceneId);
+    expandedIds.clear(); expandedId = null;
+    if (saved) {
+      grouping = saved.grouping;
+      for (const id of saved.expanded) if (status.entries.some(entry => entry.id === id)) expandedIds.add(id);
+      expandedId = saved.active && expandedIds.has(saved.active) ? saved.active : null;
+      for (const [id, look] of Object.entries(saved.looks)) if (status.entries.some(entry => entry.id === id)) previews.set(id, { look: clampMiniLook(look, navigation()), still: null, faceKey: null });
+    }
+    return true;
+  }
   function renderScene(status: SceneStatus | null): void {
     for (const off of pressBindings) off();
     pressBindings = [];
@@ -269,19 +295,7 @@ export function createScenesPanel(options: { document: Document; controller: Sce
     sceneBlock = el("div", "foss-earth-choice-panel");
     previousBlock.after(sceneBlock);
     credits.replaceChildren();
-    if (!status || status.phase === "disposed") { clearPreviews(); previewScope = null; sceneBlock.append(note("No scene is loaded.")); credits.append(note("Nothing from a scene is on screen.")); previousBlock.remove(); expandedId = null; expandedIds.clear(); return; }
-    const scope = `${status.sceneId}:${status.generation}`;
-    if (scope !== previewScope) {
-      clearPreviews(); previewScope = scope;
-      const saved = savedPanel.get(status.sceneId);
-      expandedIds.clear(); expandedId = null;
-      if (saved) {
-        grouping = saved.grouping;
-        for (const id of saved.expanded) if (status.entries.some(entry => entry.id === id)) expandedIds.add(id);
-        expandedId = saved.active && expandedIds.has(saved.active) ? saved.active : null;
-        for (const [id, look] of Object.entries(saved.looks)) if (status.entries.some(entry => entry.id === id)) previews.set(id, { look: clampMiniLook(look, navigation()), still: null, faceKey: null });
-      }
-    }
+    if (!adoptScope(status)) { sceneBlock.append(note("No scene is loaded.")); credits.append(note("Nothing from a scene is on screen.")); previousBlock.remove(); return; }
     for (const [id, preview] of previews) {
       if (!expandedIds.has(id)) { preview.still?.destroy(); preview.still = null; preview.faceKey = null; }
     }
@@ -543,6 +557,7 @@ export function createScenesPanel(options: { document: Document; controller: Sce
     { id: "scenes.credits", title: "Credits", element: creditSection.element, defaultOpen: false },
   ]);
   let destroyed = false;
+  let shown = options.shown ?? true;
   const paint = (state: SceneControllerState): void => {
     // Visibility setters emit synchronously. Restore all own checkboxes before
     // rendering/saving the new scene, so intermediate snapshots cannot replace
@@ -565,6 +580,13 @@ export function createScenesPanel(options: { document: Document; controller: Sce
         state = controller.state();
       }
     }
+    if (!shown && !sections.element.isConnected) {
+      // Off screen: keep what is saved, and rebuild when shown.
+      adoptScope(state.status);
+      savePanel();
+      lastRendered = undefined;
+      return;
+    }
     renderMessages(state);
     const key = JSON.stringify(state.status ? { ...state.status, view: null, layerArrangement: options.layerArrangement?.count() ?? 0, grouping, expandedId, expandedIds: [...expandedIds], opening: options.opening?.mode() ?? null } : null);
     if (key !== lastRendered) { lastRendered = key; renderScene(state.status); savePanel(); }
@@ -585,7 +607,12 @@ export function createScenesPanel(options: { document: Document; controller: Sce
     paint(controller.state());
   }
   const offOpening = options.opening?.subscribe?.(() => { if (!updatingOpening) applyOpening(); });
-  return { element: sections.element, destroy() { if (destroyed) return; destroyed = true; for (const off of pressBindings) off(); pressBindings = []; flushPanel(); clearPreviews(); coverObserver?.disconnect(); if (indicatorTimer !== undefined) view?.clearTimeout(indicatorTimer); previewBackend.destroy(); savedPanel.dispose(); view?.removeEventListener("pagehide", flushPanel); document.removeEventListener("visibilitychange", onHidden); off(); offArrangement?.(); offOpening?.(); contentSection.destroy(); creditSection.destroy(); for (const contribution of contributions) contribution.destroy(); sections.destroy(); } };
+  const setShown = (next: boolean): void => {
+    if (shown === next) return;
+    shown = next;
+    if (shown && !destroyed) paint(controller.state());
+  };
+  return { element: sections.element, setShown, destroy() { if (destroyed) return; destroyed = true; for (const off of pressBindings) off(); pressBindings = []; flushPanel(); clearPreviews(); coverObserver?.disconnect(); if (indicatorTimer !== undefined) view?.clearTimeout(indicatorTimer); previewBackend.destroy(); savedPanel.dispose(); view?.removeEventListener("pagehide", flushPanel); document.removeEventListener("visibilitychange", onHidden); off(); offArrangement?.(); offOpening?.(); contentSection.destroy(); creditSection.destroy(); for (const contribution of contributions) contribution.destroy(); sections.destroy(); } };
 }
 
 /** Link buttons at authored image directions; updates only on the supplied drawn-frame event. */
