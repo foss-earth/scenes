@@ -1,6 +1,7 @@
 import { JSDOM } from "jsdom";
 import { expect, it, vi } from "vitest";
 import { createScenesPanel } from "../src/panel.js";
+import { scenesPanelUi } from "./panelUi.js";
 import type { SceneController, SceneControllerState, SceneEntryStatus, SceneHandle, SceneLayerStatus, SceneStatus } from "../src/browser.js";
 
 const key = "foss-earth.scene-panel.v1:/tour/twin-cities/";
@@ -22,7 +23,7 @@ function browser(raw?: string, { shown = true }: { shown?: boolean } = {}) {
   const controller = { examples: [], state: () => state, handle: () => state.status ? handle : null,
     subscribe(listener: (state: SceneControllerState) => void) { listeners.add(listener); listener(state); return () => listeners.delete(listener); },
   } as unknown as SceneController;
-  const ui = { parameterSection: ({ main }: { main: HTMLElement }) => ({ element: main, destroy() {} }),
+  const ui = { ...scenesPanelUi(dom.window.document), parameterSection: ({ main }: { main: HTMLElement }) => ({ element: main, destroy() {} }),
     sections(items: readonly { element: HTMLElement }[]) { const element = dom.window.document.createElement("div"); element.append(...items.map(item => item.element)); return { element, destroy() {} }; } };
   const panel = createScenesPanel({ document: dom.window.document, controller, ui, shown });
   if (shown) dom.window.document.querySelector("main")!.append(panel.element);
@@ -36,7 +37,7 @@ function browser(raw?: string, { shown = true }: { shown?: boolean } = {}) {
   };
   const checkbox = (label: string) => panel.element.querySelector<HTMLInputElement>(`input[aria-label='${label}']`)!;
   const tick = (label: string, value: boolean) => { const box = checkbox(label); box.checked = value; box.dispatchEvent(new dom.window.Event("change")); };
-  const press = (label: string) => [...panel.element.querySelectorAll("button")].find(button => button.getAttribute("aria-label") === label || button.textContent === label)!.click();
+  const press = (label: string) => (panel.element.querySelector<HTMLElement>(`input[type=radio][aria-label='${label}']`) ?? [...panel.element.querySelectorAll("button")].find(button => button.getAttribute("aria-label") === label || button.textContent === label)!).click();
   const expanded = () => [...panel.element.querySelectorAll<HTMLElement>(".foss-earth-scene-card.is-expanded")].map(card => card.dataset.sphere).sort();
   return { dom, panel, controller, load, tick, checkbox, press, expanded, setLayerVisible, handle,
     reloadData() { dom.window.dispatchEvent(new dom.window.Event("pagehide")); return dom.window.localStorage.getItem(key)!; },
@@ -67,7 +68,7 @@ it("restores nested layer tickboxes and mixed photograph sizes in a fresh page b
     expect(next.checkbox("Indoor, 360 images").checked).toBe(false);
     expect(next.setLayerVisible).toHaveBeenCalledTimes(2);
     expect(next.controller.state().status!.layers[0].layers[0].shown).toBe(false);
-    expect([...next.panel.element.querySelectorAll("button")].find(button => button.textContent === "Tour stops")!.getAttribute("aria-pressed")).toBe("true");
+    expect(next.panel.element.querySelector<HTMLInputElement>("input[type=radio][aria-label='Tour stops']")!.checked).toBe(true);
     next.load(); // Scene replacement also restores instead of overwriting with authored defaults.
     expect(next.checkbox("Outdoor").checked).toBe(false);
     expect(next.expanded()).toEqual(["a", "c"]);

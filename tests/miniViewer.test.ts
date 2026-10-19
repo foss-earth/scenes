@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { imagePoseMatrix, transpose3 } from "@foss-earth/images";
 import { createLookModel, sphereRay } from "@foss-earth/sphere-image";
 import { sourceCubeLookup } from "@foss-earth/sphere-cubemap";
-import { createMiniFrames, createMiniLook, DEFAULT_MINI_NAVIGATION } from "../src/miniViewer.js";
+import { createMiniFrames, createMiniLook, DEFAULT_MINI_NAVIGATION, type MiniNavigation } from "../src/miniViewer.js";
 import { createPreviewSheetCache, createPreviewPainter, previewRay, renderPreviewFrame, samplePreview, type SheetPixels } from "../src/miniViewerCpu.js";
 
 const level = { headingDeg: 0, pitchDeg: 0, verticalFovDeg: 90 };
@@ -67,6 +67,27 @@ describe("mini navigation shared with the full viewer", () => {
     model.wheel(-100);
     expect(model.get().verticalFovDeg).toBeCloseTo(2 * Math.atan(Math.exp(-nav.zoomPerNotch)) * 180 / Math.PI);
   });
+  it("uses the live drag choice so Scroll responds equally from the top, center and bottom", () => {
+    const nav: MiniNavigation = { ...DEFAULT_MINI_NAVIGATION, dragMode: "scroll", inertiaHalfLifeMs: 0 };
+    const initial = { headingDeg: 100, pitchDeg: 40, verticalFovDeg: 100 };
+    const viewport = { width: 390, height: 844 };
+    const cameras = [10, 422, 834].map(y => {
+      const model = createMiniLook(initial, () => nav, () => {}, () => viewport);
+      model.drag(60, 0, 16, { x: 195, y });
+      expect(model.anchor()).toBeNull();
+      return model;
+    });
+    expect(cameras[0].get()).toEqual(cameras[1].get());
+    expect(cameras[2].get()).toEqual(cameras[1].get());
+    expect(cameras[0].get().pitchDeg).toBe(initial.pitchDeg);
+    expect(cameras[0].get().verticalFovDeg).toBe(initial.verticalFovDeg);
+    expect(cameras[0].get().headingDeg).toBeLessThan(initial.headingDeg);
+    nav.dragMode = "grab";
+    cameras[0].set(initial);
+    cameras[0].drag(60, 0, 16, { x: 195, y: 10 });
+    expect(cameras[0].anchor()).not.toBeNull();
+    expect(cameras[0].get().pitchDeg).not.toBe(initial.pitchDeg);
+  });
 });
 
 it("starts a fresh frame clock after idle and draws nothing after settling", () => {
@@ -90,8 +111,8 @@ it("starts a fresh frame clock after idle and draws nothing after settling", () 
 });
 
 
-it("matches the full sphere camera through anchored wheel, pinch, drag and glide", () => {
-  const nav = { ...DEFAULT_MINI_NAVIGATION, dragSensitivity: .23, swipeSensitivity: .12, pinchGain: 1.4, inertiaHalfLifeMs: 170 };
+it.each(["grab", "scroll"] as const)("matches the full sphere camera through wheel, pinch, drag and glide in %s mode", dragMode => {
+  const nav = { ...DEFAULT_MINI_NAVIGATION, dragMode, dragSensitivity: .23, swipeSensitivity: .12, pinchGain: 1.4, inertiaHalfLifeMs: 170 };
   const viewport = { width: 88, height: 88 };
   const mini = createMiniLook(level, () => nav, () => {}, () => viewport);
   const full = createLookModel(level, () => ({

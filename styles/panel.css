@@ -86,25 +86,10 @@
   border-color: transparent;
 }
 
+/* "Group [Layers / Stops] ?  Opening [Enter / Last / Each / Fixed] ?  [Look up]" */
 .foss-earth-scene-tools {
   flex-basis: 100%;
   align-items: center;
-}
-
-.foss-earth-scene-tools__group {
-  display: flex;
-  flex-basis: 100%;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-}
-
-.foss-earth-scene-tools__label {
-  font-size: 12px;
-}
-
-.foss-earth-scene-tools .foss-earth-choice[aria-pressed="true"] {
-  border-color: var(--globe-accent, #60a5fa);
 }
 
 .foss-earth-scene-entry__frame {
@@ -238,23 +223,23 @@
 }
 
 
+/* A group's title and its minimize or maximize all, first in its paragraph, its photographs after it. */
 .foss-earth-scene-group-heading {
   display: flex;
-  flex: 1 1 100%;
+  flex: 0 1 auto;
   min-width: 0;
   align-items: center;
-  gap: 6px;
+  gap: 3px;
 }
 
 .foss-earth-scene-group-heading > .foss-earth-scene-layer,
 .foss-earth-scene-group-heading > .foss-earth-choices__heading {
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   min-width: 0;
 }
 
 .foss-earth-scene-group-toggle {
   flex: 0 0 auto;
-  margin-left: auto;
 }
 
 .foss-earth-scene-layer-group,
@@ -285,16 +270,21 @@
   border-radius: 8px;
 }
 
+/* Beside its group's title when the photographs fit there, and on a line of its own when they do not. */
 .foss-earth-scene-layer-members {
   display: flex;
-  flex-basis: 100%;
+  flex: 1 1 auto;
   flex-wrap: wrap;
   align-items: flex-start;
   gap: 8px;
 }
 
-.foss-earth-scene-stop > .foss-earth-choices__heading {
-  flex-basis: 100%;
+/* A tour stop is a block of its own, like a layer. */
+.foss-earth-scene-layer-members.foss-earth-scene-stop {
+  flex: 1 1 100%;
+}
+
+.foss-earth-scene-stop .foss-earth-choices__heading {
   font-size: 12px;
 }
 
@@ -317,7 +307,7 @@
   flex-basis: 100%;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  gap: 3px;
 }
 
 .foss-earth-scene-layer-export {

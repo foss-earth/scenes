@@ -1,6 +1,7 @@
 import { JSDOM } from "jsdom";
 import { expect, it, vi } from "vitest";
 import { createScenesPanel } from "../src/panel.js";
+import { scenesPanelUi } from "./panelUi.js";
 import type { SceneController, SceneControllerState, SceneEntryStatus, SceneStatus } from "../src/browser.js";
 
 const probe = vi.hoisted(() => ({ paints: new Map<string, number>(), live: null as null | { id: string; look: { headingDeg: number; pitchDeg: number; verticalFovDeg: number }; move(look: { headingDeg: number; pitchDeg: number; verticalFovDeg: number }): void } }));
@@ -35,7 +36,7 @@ it("Look up paints every expanded photograph once; hover preserves that frame an
   const state: SceneControllerState = { status, errors: [], loading: null };
   const controller = { state: () => state, examples: [], handle: () => null, subscribe(listener: (value: SceneControllerState) => void) { listener(state); return () => {}; } } as unknown as SceneController;
   const makePanel = () => createScenesPanel({ document, controller,
-    ui: { parameterSection: ({ main }) => ({ element: main, destroy() {} }), sections(items) { const element = document.createElement("div"); element.append(...items.map(item => item.element)); return { element, destroy() {} }; } },
+    ui: { ...scenesPanelUi(document), parameterSection: ({ main }) => ({ element: main, destroy() {} }), sections(items) { const element = document.createElement("div"); element.append(...items.map(item => item.element)); return { element, destroy() {} }; } },
     opening: { mode: () => fixed ? "fixed" : "last", setMode() {}, lookUp() { if (!fixed) { fixed = true; stored = { ...zenith, pitchDeg: 40 }; openingChanged(); stored = zenith; openingChanged(); } }, lookFor: () => fixed ? stored : last, remember(_id, look) { last = look; }, subscribe(listener) { openingChanged = listener; return () => {}; } },
   });
   let panel = makePanel();
@@ -61,12 +62,12 @@ it("Look up paints every expanded photograph once; hover preserves that frame an
     expect(shown("a")).toEqual(zenith); expect(shown("b")).toEqual(zenith);
     hover("b"); expect(probe.live?.look).toEqual(zenith);
     probe.live!.move(turned);
-    [...panel.element.querySelectorAll("button")].find(button => button.textContent === "Tour stops")!.click();
+    panel.element.querySelector<HTMLInputElement>("input[type=radio][aria-label='Tour stops']")!.click();
     panel.destroy();
     panel = makePanel();
     document.querySelector("main")!.replaceChildren(panel.element);
     expect(panel.element.querySelectorAll(".is-expanded")).toHaveLength(2);
-    expect([...panel.element.querySelectorAll("button")].find(button => button.textContent === "Tour stops")?.getAttribute("aria-pressed")).toBe("true");
+    expect(panel.element.querySelector<HTMLInputElement>("input[type=radio][aria-label='Tour stops']")?.checked).toBe(true);
     expect(shown("b")).toEqual(turned);
     hover("a"); expect(probe.live?.look).toEqual(zenith);
 

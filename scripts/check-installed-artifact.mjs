@@ -96,14 +96,16 @@ try {
 } finally { offDetail(); }
 assert.equal((await loaded.handle.replace({ ...original, version: 2 })).ok, false); assert.equal(loaded.handle.status.active, "courtyard"); assert.deepEqual(disposals, []);
 const page = dom.window.document, controller = browser.createSceneController({ examples: [], baseUrl: validation.baseUrl, load: async () => ({ ok: true, handle: loaded.handle }) }); assert.equal(await controller.load("scene.json"), true);
-const ui = { parameterSection({ main }) { return { element: main, destroy() {} }; }, sections(sections) { const element = page.createElement("div"); for (const section of sections) element.append(section.element); return { element, destroy() { element.remove(); } }; } };
+const uiBrowser = await import(resolvePublic("@foss-earth/ui/browser"));
+const ui = { choiceGroup: (name, heading, choices, options) => uiBrowser.createChoiceGroup(name, heading, choices, page, options), checkChoice: uiBrowser.checkChoice, iconButton: options => uiBrowser.createIconButton(page, options), helpTooltip: uiBrowser.createHelpTooltip,
+  parameterSection({ main }) { return { element: main, destroy() {} }; }, sections(sections) { const element = page.createElement("div"); for (const section of sections) element.append(section.element); return { element, destroy() { element.remove(); } }; } };
 const mounted = panel.createScenesPanel({ document: page, controller, ui }); page.querySelector("main").append(mounted.element); assert.match(mounted.element.textContent, /Garden and courtyard/); mounted.destroy(); controller.destroy(); await controller.whenSettled(); assert.deepEqual(disposals.sort(), ["courtyard", "garden"]); assert.equal(subscribers.size, 0);
 // Saved-images presentation consumes the actual common store, never a scene singleton.
 const { createMediaStore } = await import(resolvePublic("@foss-earth/images"));
 let groups = [{ id: "old", label: "Older", files: 1, bytes: 1024, used: 10 }, { id: "new", label: "Most recent", files: 1, bytes: 2048, used: 20 }];
 const media = createMediaStore({ maxBytes: 1024 * 1024, now: () => 30, open: async () => ({ groups: async () => groups, clear: async () => { groups = []; }, read: async () => { throw new Error("Unexpected file read"); }, write: async () => { throw new Error("Unexpected file write"); }, touch: async () => {}, drop: async () => {}, remove: async () => {} }) });
 let refreshSaved = () => {}, savedDetaches = 0;
-const saved = browser.createSavedImagesSection({ document: page, source: media, maxListedGroups: () => 1, refresh: { subscribe(work) { refreshSaved = work; return () => { savedDetaches += 1; }; } } });
+const saved = browser.createSavedImagesSection({ document: page, source: media, maxListedGroups: () => 1, createHelpTooltip: uiBrowser.createHelpTooltip, createIconButton: uiBrowser.createIconButton, refresh: { subscribe(work) { refreshSaved = work; return () => { savedDetaches += 1; }; } } });
 page.querySelector("main").append(saved.element);
 const settleSaved = async () => { for (let turn = 0; turn < 16; turn++) await Promise.resolve(); };
 await settleSaved(); assert.deepEqual([...saved.element.querySelectorAll("li span")].map(node => node.textContent), ["Most recent"]); assert.match(saved.element.textContent, /And 1 more/);

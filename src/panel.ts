@@ -8,10 +8,22 @@ import { SCENES_TAB } from "./catalogue.js";
 import { createPreviewStill, clampMiniLook, type PreviewStill, createMiniViewer, DEFAULT_MINI_NAVIGATION, type MiniInput, type MiniNavigation, type MiniViewer } from "./miniViewer.js";
 export interface ScenePanelElement { element: HTMLElement; destroy(): void }
 export interface ScenePanelSection { id: string; title: string; element: HTMLElement; defaultOpen: boolean }
-/** Existing shared UI/settings authority supplied by the application. */
+/** One segment of a UI choice: `label` is its accessible name, `shortLabel` the text shown. */
+export interface ScenesPanelChoice { id: string; label: string; shortLabel?: string }
+/** The marks the Scenes tab's compact actions use. */
+export type ScenesPanelIcon = "target" | "close" | "collapse-all" | "expand-all" | "download" | "copy" | "reset";
+/** Existing shared UI/settings authority supplied by the application, bound to the panel's document. */
 export interface ScenesPanelUi {
   parameterSection(options: { tab: "scenes"; section: "content" | "credits"; main: HTMLElement; showAll: boolean }): ScenePanelElement;
   sections(sections: readonly ScenePanelSection[]): ScenePanelElement;
+  /** UI's segmented choice: its title, one track of radios named `name`, then a trailing ? holding `help`. */
+  choiceGroup(name: string, heading: string, choices: readonly ScenesPanelChoice[], options?: { help?: string | HTMLElement; helpLabel?: string }): HTMLElement;
+  /** Checks the radio `id` among those named `name` in `root`. */
+  checkChoice(root: ParentNode, name: string, id: string): void;
+  /** UI's compact action: a mark, with `label` as its accessible name and tooltip. */
+  iconButton(options: { icon: ScenesPanelIcon; label: string }): HTMLButtonElement;
+  /** UI's trailing ?, which shows `content` while pressed. */
+  helpTooltip(options: { label: string; content: HTMLElement }): { element: HTMLElement; destroy(): void };
 }
 /** Local corrections to which photographs belong in which panoramas layer, plus their export. */
 export interface SceneLayerArrangement {
@@ -35,6 +47,7 @@ export interface SceneOpening {
 /** Live gains shared with the full panorama viewer. */
 export interface SceneLookControl {
   input?: MiniInput;
+  dragMode?(): "grab" | "scroll";
   swipeSensitivity?(): number;
   inertiaHalfLifeMs?(): number;
   reducedMotion?(): boolean;
@@ -57,6 +70,7 @@ export interface ScenesPanelContribution extends ScenePanelElement {
   section: "links" | "appearance" | "motion" | "loading" | "tiles" | "saved";
   title: string;
 }
+let panelCount = 0;
 const PHASE_TEXT: Record<SceneStatus["phase"], string> = { overview: "Overview", preparing: "Preparing", entering: "Entering", immersive: "Inside a panorama", exiting: "Leaving", disposed: "Closed" };
 function entryState(entry: SceneEntryStatus, status: SceneStatus): string {
   if (!entry.supported) return "Not shown here";
@@ -115,9 +129,12 @@ export function createScenesPanel(options: { document: Document; controller: Sce
   const { document, controller } = options;
   const previewBackend = createPreviewBackends({ loadGpu: options.previewBackend });
   const el = <K extends keyof HTMLElementTagNameMap>(tag: K, className?: string, text?: string): HTMLElementTagNameMap[K] => { const node = document.createElement(tag); if (className) node.className = className; if (text !== undefined) node.textContent = text; return node; };
-  const row = (heading?: string): HTMLDivElement => { const node = el("div", "foss-earth-choices"); if (heading) node.append(el("div", "foss-earth-choices__heading", heading)); return node; };
+  // A block's title is the first item of its row, with its controls after it.
+  const row = (heading?: string): HTMLDivElement => { const node = el("div", "foss-earth-choices"); if (heading) node.append(el("div", "foss-earth-choices__heading foss-earth-choices__heading--inline", heading)); return node; };
   const note = (text: string): HTMLParagraphElement => el("p", "foss-earth-choices__note", text);
   const button = (label: string, action: () => void, title?: string): HTMLButtonElement => { const node = el("button", "foss-earth-choice foss-earth-scene-button", label); node.type = "button"; if (title) node.title = title; node.addEventListener("click", action); return node; };
+  const iconButton = (icon: ScenesPanelIcon, label: string, action: () => void): HTMLButtonElement => { const node = options.ui.iconButton({ icon, label }); node.addEventListener("click", action); return node; };
+  const relabel = (node: HTMLButtonElement, label: string): void => { if (node.getAttribute("aria-label") !== label) { node.setAttribute("aria-label", label); node.title = label; } };
   const content = el("div", "foss-earth-choice-panel foss-earth-scenes"), loadRow = row("Load scene"), urlField = el("input", "foss-earth-scene-url");
   urlField.type = "url"; urlField.placeholder = "https://…/scene.json"; urlField.setAttribute("aria-label", "Scene manifest URL");
   const load = (): void => { if (urlField.value.trim()) void controller.load(urlField.value); };
@@ -126,8 +143,51 @@ export function createScenesPanel(options: { document: Document; controller: Sce
   const offeredRow = row("Scenes");
   for (const offered of controller.examples) offeredRow.append(button(offered.title, () => { void controller.load(offered.id, { exampleId: true }); }, offered.description));
   const messages = row(), credits = row();
+  // The loaded scene's title, state and actions, then Group and Opening. They stay across renders, which during
+  // loading come many times a second, so an open ? stays open and a focused choice keeps focus.
+  const instance = ++panelCount;
+  const head = row(), headTitle = el("div", "foss-earth-choices__heading foss-earth-choices__heading--inline");
+  const overview = iconButton("target", "Go to the scene", () => { void controller.handle()?.showOverview(); });
+  const unload = iconButton("close", "Unload the scene", () => controller.unload());
+  const headHelp = options.ui.helpTooltip({ label: "Explain the scene's state", content: el("p", undefined,
+    "Panoramas appear as each preview arrives. Larger images load when you enter a panorama. The overview waits for the map to show the ground at the scene's place; Go to the scene goes there now. Unload removes the scene and everything it loaded.") });
+  const phaseNote = note(""), previewNote = note(""), unavailableNote = note(""), overviewNote = note("Waiting for the ground at the scene's place"), errorNote = note("");
+  head.append(headTitle, overview, unload, headHelp.element, phaseNote, previewNote, unavailableNote, overviewNote, errorNote);
+  const tools = row();
+  tools.classList.add("foss-earth-scene-tools");
+  const groupingName = `foss-earth-scene-grouping-${instance}`, openingName = `foss-earth-scene-opening-${instance}`;
+  const groupBy = options.ui.choiceGroup(groupingName, "Group", [{ id: "layers", label: "Indoor and outdoor", shortLabel: "Layers" }, { id: "stops", label: "Tour stops", shortLabel: "Stops" }], {
+    helpLabel: "Explain Group",
+    help: `Layers: the photographs under the scene's indoor and outdoor layers.${options.layerArrangement ? " Drag one onto Indoor or Outdoor to move it; Download keeps a copy of the moves, as a place or orientation export does." : ""} Stops: the photographs under each tour stop.`,
+  });
+  groupBy.addEventListener("change", event => {
+    const input = event.target as HTMLInputElement;
+    if (input.name !== groupingName || (input.value !== "layers" && input.value !== "stops")) return;
+    grouping = input.value; lastRendered = undefined; paint(controller.state());
+  });
+  tools.append(groupBy);
+  const openingControl = options.opening;
+  if (openingControl) {
+    const openBy = options.ui.choiceGroup(openingName, "Opening", [
+      { id: "enter", label: "On entering", shortLabel: "Enter" }, { id: "last", label: "Last view", shortLabel: "Last" },
+      { id: "image", label: "Each photograph", shortLabel: "Each" }, { id: "fixed", label: "One position", shortLabel: "Fixed" },
+    ], {
+      helpLabel: "Explain Opening",
+      help: "Where thumbnails and photographs open. Enter: as On entering sets it. Last: where you last looked, in any photograph. Each: where you last looked in this photograph. Fixed: the opening heading and pitch in 360 image settings; Look up sets that position looking up. Entering from the map keeps the direction you came from.",
+    });
+    openBy.addEventListener("change", event => {
+      const input = event.target as HTMLInputElement;
+      if (input.name === openingName) openingControl.setMode(input.value as SceneOpeningMode);
+    });
+    tools.append(openBy, button("Look up", () => {
+      updatingOpening = true;
+      try { openingControl.lookUp(); } finally { updatingOpening = false; }
+      applyOpening();
+    }, "Open every photograph looking up"));
+  }
+  head.hidden = true; tools.hidden = true;
   let sceneBlock = el("div", "foss-earth-choice-panel");
-  content.append(loadRow, offeredRow, messages, sceneBlock);
+  content.append(loadRow, offeredRow, messages, head, tools, sceneBlock);
   const view = document.defaultView;
   let storage: Storage | null = null;
   try { storage = view?.localStorage ?? null; } catch { /* Storage is optional. */ }
@@ -231,7 +291,7 @@ export function createScenesPanel(options: { document: Document; controller: Sce
     if (!look) return DEFAULT_MINI_NAVIGATION;
     const pitch = look.pitchRange();
     const fov = look.fovRange();
-    return { swipeSensitivity: look.swipeSensitivity?.(), inertiaHalfLifeMs: look.inertiaHalfLifeMs?.(), reducedMotion: look.reducedMotion?.(), dragSensitivity: look.dragSensitivity(), zoomPerNotch: look.zoomPerNotch(), pinchGain: look.pinchGain(), pitch, fov };
+    return { dragMode: look.dragMode?.(), swipeSensitivity: look.swipeSensitivity?.(), inertiaHalfLifeMs: look.inertiaHalfLifeMs?.(), reducedMotion: look.reducedMotion?.(), dragSensitivity: look.dragSensitivity(), zoomPerNotch: look.zoomPerNotch(), pinchGain: look.pinchGain(), pitch, fov };
   };
   function placeMini(status: SceneStatus | null): void {
     const entry = expandedId ? status?.entries.find(item => item.id === expandedId) : undefined;
@@ -295,50 +355,27 @@ export function createScenesPanel(options: { document: Document; controller: Sce
     sceneBlock = el("div", "foss-earth-choice-panel");
     previousBlock.after(sceneBlock);
     credits.replaceChildren();
-    if (!adoptScope(status)) { sceneBlock.append(note("No scene is loaded.")); credits.append(note("Nothing from a scene is on screen.")); previousBlock.remove(); return; }
+    if (!adoptScope(status)) { head.hidden = true; tools.hidden = true; sceneBlock.append(note("No scene is loaded.")); credits.append(note("Nothing from a scene is on screen.")); previousBlock.remove(); return; }
     for (const [id, preview] of previews) {
       if (!expandedIds.has(id)) { preview.still?.destroy(); preview.still = null; preview.faceKey = null; }
     }
-    const heading = row(status.title); heading.append(note(`${PHASE_TEXT[status.phase]}. ${status.entries.length} ${status.entries.length === 1 ? "entity" : "entities"}, revision ${status.revision}.`));
     const supported = status.entries.filter(entry => entry.supported), ready = supported.filter(entry => entry.preview === "ready").length, failed = supported.filter(entry => entry.preview === "failed").length;
-    if (supported.length) heading.append(note(`${ready} of ${supported.length} panorama previews ready${failed ? `; ${failed} unavailable` : ""}. Panoramas appear as each preview arrives. Larger images load when you enter a panorama.`));
-    if (!status.renderingAvailable) heading.append(note(status.unavailableReason ?? "Panoramas cannot be drawn here."));
-    if (status.overview === "pending") { heading.append(note("The overview waits for the map to show the ground at the scene's place.")); heading.append(button("Go to the scene", () => { void controller.handle()?.showOverview(); })); }
-    else if (status.overview === "applied" && status.phase === "overview") heading.append(button("Back to the scene's view", () => { void controller.handle()?.showOverview(); }));
-    heading.append(button("Unload", () => controller.unload(), "Removes the scene and everything it loaded.")); if (status.lastError) heading.append(note(status.lastError)); sceneBlock.append(heading);
+    const showNote = (node: HTMLElement, text: string | null): void => { node.hidden = !text; if (text && node.textContent !== text) node.textContent = text; };
+    headTitle.textContent = status.title;
+    showNote(phaseNote, `${PHASE_TEXT[status.phase]} · ${status.entries.length} ${status.entries.length === 1 ? "entity" : "entities"} · revision ${status.revision}`);
+    showNote(previewNote, supported.length ? `${ready} of ${supported.length} previews ready${failed ? ` · ${failed} unavailable` : ""}` : null);
+    showNote(unavailableNote, status.renderingAvailable ? null : status.unavailableReason ?? "Panoramas cannot be drawn here.");
+    overviewNote.hidden = status.overview !== "pending";
+    overview.hidden = !(status.overview === "pending" || (status.overview === "applied" && status.phase === "overview"));
+    relabel(overview, status.overview === "pending" ? "Go to the scene" : "Back to the scene's view");
+    showNote(errorNote, status.lastError);
+    head.hidden = false;
     const arranged = options.layerArrangement;
     const placed = new Set<string>();
     let dragging: { entityId: string; sourceLayerId: string } | null = null;
-    const showPhotographs = status.entries.some(entry => entry.supported);
-    if (showPhotographs) {
-      const tools = row();
-      tools.classList.add("foss-earth-scene-tools");
-      const groupBy = el("div", "foss-earth-scene-tools__group");
-      groupBy.append(el("span", "foss-earth-scene-tools__label", "Group"));
-      for (const [id, label] of [["layers", "Indoor and outdoor"], ["stops", "Tour stops"]] as const) {
-        const choice = button(label, () => { grouping = id; lastRendered = undefined; paint(controller.state()); });
-        choice.setAttribute("aria-pressed", String(grouping === id));
-        groupBy.append(choice);
-      }
-      tools.append(groupBy);
-      const opening = options.opening;
-      if (opening) {
-        const openBy = el("div", "foss-earth-scene-tools__group");
-        openBy.append(el("span", "foss-earth-scene-tools__label", "Opening view"));
-        for (const [id, label] of [["enter", "On entering"], ["last", "Last view"], ["image", "Each photograph"], ["fixed", "One position"]] as const) {
-          const choice = button(label, () => opening.setMode(id));
-          choice.setAttribute("aria-pressed", String(opening.mode() === id));
-          openBy.append(choice);
-        }
-        openBy.append(button("Look up", () => {
-          updatingOpening = true;
-          try { opening.lookUp(); } finally { updatingOpening = false; }
-          applyOpening();
-        }, "Open every photograph looking up"));
-        tools.append(openBy);
-      }
-      sceneBlock.append(tools);
-    }
+    tools.hidden = !status.entries.some(entry => entry.supported);
+    options.ui.checkChoice(tools, groupingName, grouping);
+    if (openingControl) options.ui.checkChoice(tools, openingName, openingControl.mode());
     const entryItem = (entry: SceneEntryStatus, sourceLayerId: string | null): HTMLDivElement => {
       const expanded = expandedIds.has(entry.id);
       const item = el("div", `foss-earth-scene-card${expanded ? " is-expanded" : ""}`);
@@ -421,7 +458,7 @@ export function createScenesPanel(options: { document: Document; controller: Sce
       const ids = [...new Set(members)].filter(id => supported.some(entry => entry.id === id));
       if (ids.length) {
         const all = ids.every(id => expandedIds.has(id));
-        const toggle = button(all ? "Minimize all" : "Maximize all", () => {
+        const toggle = iconButton(all ? "collapse-all" : "expand-all", `${all ? "Minimize" : "Maximize"} all in ${name}`, () => {
           for (const id of ids) { if (all) expandedIds.delete(id); else expandedIds.add(id); }
           if (all && expandedId && ids.includes(expandedId)) expandedId = null;
           if (!all) expandedId = ids[0];
@@ -429,7 +466,6 @@ export function createScenesPanel(options: { document: Document; controller: Sce
           paint(controller.state());
         });
         toggle.classList.add("foss-earth-scene-group-toggle");
-        toggle.setAttribute("aria-label", `${all ? "Minimize" : "Maximize"} all in ${name}`);
         header.append(toggle);
       }
       return header;
@@ -483,13 +519,15 @@ export function createScenesPanel(options: { document: Document; controller: Sce
       renderLayers(status.layers, layers);
       if (arranged) {
         const actions = el("div", "foss-earth-scene-layer-actions");
-        const arrangementNote = note(arranged.count() ? arranged.note() : "Drag a photograph onto Indoor or Outdoor. Download keeps a copy, as a place or orientation export does.");
-        actions.append(arrangementNote);
+        // How to move a photograph is behind Group's ?; the note says what has been moved and what an action did.
+        const arrangementNote = note(arranged.count() ? arranged.note() : "");
+        arrangementNote.hidden = !arranged.count();
+        const tell = (message: string): void => { arrangementNote.textContent = message; arrangementNote.hidden = false; };
         const reveal = el("pre", "foss-earth-scene-layer-export");
         reveal.hidden = true;
         const prepare = (): { text: string; filename: string; disclosures: readonly string[] } | null => arranged.exportDocument();
-        const show = (text: string, message: string): void => { reveal.hidden = false; reveal.textContent = text; arrangementNote.textContent = message; };
-        const download = button("Download", () => {
+        const show = (text: string, message: string): void => { reveal.hidden = false; reveal.textContent = text; tell(message); };
+        const download = iconButton("download", "Download layer moves", () => {
           const prepared = prepare(); if (!prepared) return;
           const view = document.defaultView; if (!view) return;
           const url = view.URL.createObjectURL(new Blob([prepared.text], { type: "application/json" }));
@@ -497,19 +535,19 @@ export function createScenesPanel(options: { document: Document; controller: Sce
           document.body.append(link); link.click(); link.remove();
           view.setTimeout(() => view.URL.revokeObjectURL(url), 1500);
           const extra = prepared.disclosures.length ? ` ${prepared.disclosures.join(" ")}` : "";
-          arrangementNote.textContent = `Download requested for ${prepared.filename}.${extra}`;
-        }, "Saves the layer corrections as a file");
-        const copy = button("Copy JSON", () => {
+          tell(`Download requested for ${prepared.filename}.${extra}`);
+        });
+        const copy = iconButton("copy", "Copy layer moves as JSON", () => {
           const prepared = prepare(); if (!prepared) return;
           const write = document.defaultView?.navigator.clipboard?.writeText(prepared.text);
           if (!write) { show(prepared.text, `Copy failed. Select the JSON below and keep ${prepared.filename}.`); return; }
-          void write.then(() => { reveal.hidden = true; arrangementNote.textContent = `Copied ${prepared.filename}.`; }, () => show(prepared.text, `Copy failed. Select the JSON below and keep ${prepared.filename}.`));
+          void write.then(() => { reveal.hidden = true; tell(`Copied ${prepared.filename}.`); }, () => show(prepared.text, `Copy failed. Select the JSON below and keep ${prepared.filename}.`));
         });
-        const reset = button("Reset layers", () => arranged.reset(), "Puts every photograph back in its published layer");
+        const reset = iconButton("reset", "Reset layers: every photograph back in its published layer", () => arranged.reset());
         reset.disabled = arranged.count() === 0;
         download.disabled = arranged.count() === 0;
         copy.disabled = arranged.count() === 0;
-        actions.append(download, copy, reset, reveal);
+        actions.append(download, copy, reset, arrangementNote, reveal);
         layers.append(actions);
       }
       sceneBlock.append(layers);
@@ -612,7 +650,7 @@ export function createScenesPanel(options: { document: Document; controller: Sce
     shown = next;
     if (shown && !destroyed) paint(controller.state());
   };
-  return { element: sections.element, setShown, destroy() { if (destroyed) return; destroyed = true; for (const off of pressBindings) off(); pressBindings = []; flushPanel(); clearPreviews(); coverObserver?.disconnect(); if (indicatorTimer !== undefined) view?.clearTimeout(indicatorTimer); previewBackend.destroy(); savedPanel.dispose(); view?.removeEventListener("pagehide", flushPanel); document.removeEventListener("visibilitychange", onHidden); off(); offArrangement?.(); offOpening?.(); contentSection.destroy(); creditSection.destroy(); for (const contribution of contributions) contribution.destroy(); sections.destroy(); } };
+  return { element: sections.element, setShown, destroy() { if (destroyed) return; destroyed = true; for (const off of pressBindings) off(); pressBindings = []; flushPanel(); clearPreviews(); headHelp.destroy(); coverObserver?.disconnect(); if (indicatorTimer !== undefined) view?.clearTimeout(indicatorTimer); previewBackend.destroy(); savedPanel.dispose(); view?.removeEventListener("pagehide", flushPanel); document.removeEventListener("visibilitychange", onHidden); off(); offArrangement?.(); offOpening?.(); contentSection.destroy(); creditSection.destroy(); for (const contribution of contributions) contribution.destroy(); sections.destroy(); } };
 }
 
 /** Link buttons at authored image directions; updates only on the supplied drawn-frame event. */

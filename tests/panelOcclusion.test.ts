@@ -1,6 +1,7 @@
 import { JSDOM } from "jsdom";
 import { expect, it, vi } from "vitest";
 import { createScenesPanel, type PreviewBackend } from "../src/panel.js";
+import { scenesPanelUi } from "./panelUi.js";
 import type { SceneController, SceneControllerState, SceneEntryStatus, SceneStatus } from "../src/browser.js";
 
 vi.mock("../src/miniViewer.js", async original => ({
@@ -28,7 +29,7 @@ it("hides the indicator after two seconds, widens a long title, and reuses the m
   const draw = vi.fn(() => true);
   const backend: PreviewBackend = { create: () => ({ paint: draw, destroy() {} }), destroy() {} };
   const panel = createScenesPanel({ document, controller, previewBackend: async () => backend,
-    ui: { parameterSection: ({ main }) => ({ element: main, destroy() {} }), sections(items) { const element = document.createElement("div"); element.append(...items.map(item => item.element)); return { element, destroy() {} }; } },
+    ui: { ...scenesPanelUi(document), parameterSection: ({ main }) => ({ element: main, destroy() {} }), sections(items) { const element = document.createElement("div"); element.append(...items.map(item => item.element)); return { element, destroy() {} }; } },
   });
   try {
     document.querySelector("main")!.append(panel.element);
@@ -40,7 +41,7 @@ it("hides the indicator after two seconds, widens a long title, and reuses the m
     expect(panel.element.querySelector(".is-indicator-hidden")).not.toBeNull();
     expect(draw).toHaveBeenCalledTimes(1);
     panel.element.querySelector(".foss-earth-scene-card")!.dispatchEvent(new dom.window.Event("pointerenter"));
-    [...panel.element.querySelectorAll("button")].find(button => button.textContent === "Tour stops")!.click();
+    panel.element.querySelector<HTMLInputElement>("input[type=radio][aria-label='Tour stops']")!.click();
     expect(panel.element.querySelector<HTMLElement>(".foss-earth-scene-entry__mark")!.hidden).toBe(true);
     expect(draw).toHaveBeenCalledTimes(1);
   } finally { panel.destroy(); vi.useRealTimers(); dom.window.close(); }

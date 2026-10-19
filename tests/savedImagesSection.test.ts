@@ -1,10 +1,11 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { MediaStoreSnapshot } from "@foss-earth/images";
+import { createHelpTooltip, createIconButton } from "@foss-earth/ui/browser";
 import { createSavedImagesSection as createInjectedSavedImagesSection, type SavedImagesSectionHandle, type SavedImagesSource } from "../src/browser.js";
 
 // Original assertion bodies use the actual owner factory with explicit host ports.
-const createSavedImagesSection = (source: SavedImagesSource): SavedImagesSectionHandle => createInjectedSavedImagesSection({ document, source, refresh: { subscribe: () => () => {} }, maxListedGroups: () => 60 });
+const createSavedImagesSection = (source: SavedImagesSource): SavedImagesSectionHandle => createInjectedSavedImagesSection({ document, source, refresh: { subscribe: () => () => {} }, maxListedGroups: () => 60, createHelpTooltip, createIconButton });
 
 const MIB = 1024 * 1024;
 const snapshot = (over: Partial<MediaStoreSnapshot> = {}): MediaStoreSnapshot => ({
@@ -28,7 +29,12 @@ describe("the saved images section", () => {
     document.body.append(section.element);
     await settle();
     expect(text()).toContain("412 files of 2 images · 3.0 MB of 256.0 MB");
-    expect(text()).toContain("This visit: 120 files (1.5 MB) came from saved images instead of the network, and 292 files (1.5 MB) were added.");
+    expect(text()).toContain("This visit: 120 files (1.5 MB) reused · 292 files (1.5 MB) added");
+    // "412 files of 2 images · … ▭ 🗑 ?": the count, the bar, Clear and the explanation in one row.
+    const row = section.element.firstElementChild!;
+    expect([...row.children].map(child => child.tagName)).toEqual(["SPAN", "PROGRESS", "BUTTON", "SPAN"]);
+    expect([row.querySelector("button")!.dataset.icon, row.querySelector("button")!.getAttribute("aria-label")]).toEqual(["trash", "Clear saved images"]);
+    expect(row.lastElementChild!.querySelector("button")!.getAttribute("aria-label")).toBe("Explain saved images");
     expect([...section.element.querySelectorAll("li span")].map(item => item.textContent)).toEqual(["northrop-mall · eac-tiles", "northrop-mall · preview-64"]);
     const usage = section.element.querySelector("progress")!;
     expect([usage.value, usage.max]).toEqual([3 * MIB, 256 * MIB]);

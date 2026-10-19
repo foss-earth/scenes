@@ -13,6 +13,7 @@ import type { ScenePreviewFace } from "./ports.js";
 export type MiniLook = ViewRecord;
 
 export interface MiniNavigation {
+  dragMode?: "grab" | "scroll";
   swipeSensitivity?: number;
   inertiaHalfLifeMs?: number;
   reducedMotion?: boolean;
@@ -24,6 +25,7 @@ export interface MiniNavigation {
 }
 
 export const DEFAULT_MINI_NAVIGATION: MiniNavigation = {
+  dragMode: "grab",
   inertiaHalfLifeMs: 100,
   reducedMotion: false,
   dragSensitivity: 0.15,
@@ -56,7 +58,7 @@ export function createMiniLook(initial: MiniLook, navigation: () => MiniNavigati
   return createLookModel(initial, () => {
     const nav = navigation();
     return {
-      dragSensitivity: nav.dragSensitivity, swipeSensitivity: nav.swipeSensitivity ?? nav.dragSensitivity,
+      dragMode: nav.dragMode, dragSensitivity: nav.dragSensitivity, swipeSensitivity: nav.swipeSensitivity ?? nav.dragSensitivity,
       zoomPerNotch: nav.zoomPerNotch, pinchGain: nav.pinchGain,
       inertiaHalfLifeMs: nav.inertiaHalfLifeMs ?? 100, reducedMotion: nav.reducedMotion ?? false,
       pitchRangeDeg: nav.pitch, fovRangeDeg: nav.fov, lookRate: 0, zoomRate: 0,

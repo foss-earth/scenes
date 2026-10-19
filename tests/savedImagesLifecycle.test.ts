@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { MediaStoreSnapshot } from "@foss-earth/images";
+import { createHelpTooltip, createIconButton } from "@foss-earth/ui/browser";
 import { createSavedImagesSection, type SavedImagesSectionHandle, type SavedImagesSource } from "../src/browser.js";
 
 const sections: SavedImagesSectionHandle[] = [];
@@ -14,7 +15,7 @@ async function settle(): Promise<void> { for (let turn = 0; turn < 8; turn++) aw
 function harness(source: SavedImagesSource, options: { document?: Document; limit?: number; stop?: () => void } = {}) {
   let tick: () => void = () => {};
   const stop = vi.fn(options.stop ?? (() => {}));
-  const section = createSavedImagesSection({ document: options.document ?? document, source, maxListedGroups: () => options.limit ?? 60, refresh: { subscribe(listener) { tick = listener; return stop; } } });
+  const section = createSavedImagesSection({ document: options.document ?? document, source, maxListedGroups: () => options.limit ?? 60, createHelpTooltip, createIconButton, refresh: { subscribe(listener) { tick = listener; return stop; } } });
   sections.push(section); return { section, tick: () => tick(), stop };
 }
 
@@ -48,7 +49,7 @@ describe("Saved images injected lifecycle", () => {
   it("reports a post-clear inspect failure without an unhandled rejection or a stuck clearing button", async () => {
     const inspect = vi.fn().mockResolvedValueOnce(value(3)).mockRejectedValueOnce(new Error("inspection refused")), clear = vi.fn(async () => {});
     const h = harness({ inspect, clear }); document.body.append(h.section.element); await settle(); h.section.element.querySelector("button")!.click(); await settle();
-    expect(h.section.element.querySelector("[role=status]")!.textContent).toMatch(/^Saved images cleared, but could not read/); expect(h.section.element.querySelector("button")!.disabled).toBe(false); expect(h.section.element.querySelector("button")!.textContent).toBe("Clear saved images");
+    expect(h.section.element.querySelector("[role=status]")!.textContent).toMatch(/^Saved images cleared, but could not read/); expect(h.section.element.querySelector("button")!.disabled).toBe(false); expect(h.section.element.querySelector("button")!.getAttribute("aria-label")).toBe("Clear saved images");
   });
   it.each(["resolve", "reject"] as const)("makes a late clear %s and held refresh callback inert after repeated destruction", async outcome => {
     const pending = deferred<void>(), inspect = vi.fn(async () => value(3)), clear = vi.fn(() => pending.promise), h = harness({ inspect, clear });

@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { JSDOM } from "jsdom";
 import { describe, expect, it, vi } from "vitest";
 import { createScenesPanel, createSceneHotspots, type SceneLayerArrangement, type ScenePanelSection } from "../src/panel.js";
+import { scenesPanelUi } from "./panelUi.js";
 import type { SceneController, SceneControllerState, SceneEntryStatus, SceneHandle, SceneLayerStatus, SceneStatus } from "../src/browser.js";
 function setup() {
   const dom = new JSDOM("<main></main>"), document = dom.window.document;
@@ -10,6 +11,7 @@ function setup() {
   const controller: SceneController = { examples: [{ id: "tour", title: "Host tour", description: "Explicit host scene", url: "tour.json" }], state: () => state, handle: () => active, load: vi.fn(async () => true), unload: vi.fn(), consumePointerPress: vi.fn(), subscribe(listener) { listeners.add(listener); listener(state); return () => { listeners.delete(listener); }; }, onFailure: () => () => {}, onProgress: () => () => {}, whenSettled: async () => {}, destroy() {} };
   const sections: ScenePanelSection[] = [], destroys: string[] = [];
   const ui = {
+    ...scenesPanelUi(document),
     parameterSection(options: { section: string; main: HTMLElement }) { return { element: options.main, destroy() { destroys.push(options.section); } }; },
     sections(items: readonly ScenePanelSection[]) { sections.push(...items); const element = document.createElement("div"); for (const item of items) element.append(item.element); return { element, destroy() { destroys.push("sections"); } }; },
   };
@@ -135,12 +137,23 @@ describe("injected Scenes presentation", () => {
       vi.advanceTimersByTime(500);
       vi.useRealTimers();
       expect(panel.element.querySelectorAll("iframe")).toHaveLength(1);
-      [...panel.element.querySelectorAll("button")].find(button => button.textContent === "Last view")!.click();
+      // "Group [Layers / Stops] ?  Opening [Enter / Last / Each / Fixed] ?  [Look up]": one track each, full names spoken.
+      const tools = panel.element.querySelector<HTMLElement>(".foss-earth-scene-tools")!;
+      expect([...tools.querySelectorAll('[role="radiogroup"]')].map(group => group.getAttribute("aria-label"))).toEqual(["Group", "Opening"]);
+      expect([...tools.querySelectorAll<HTMLInputElement>("input[type=radio]")].map(input => [input.getAttribute("aria-label"), input.checked])).toEqual([
+        ["Indoor and outdoor", true], ["Tour stops", false], ["On entering", true], ["Last view", false], ["Each photograph", false], ["One position", false]]);
+      expect(tools.lastElementChild?.textContent).toBe("Look up");
+      tools.querySelector<HTMLInputElement>('input[aria-label="Last view"]')!.click();
       expect(mode).toBe("last");
       expect(panel.element.querySelectorAll("iframe")).toHaveLength(1);
       [...panel.element.querySelectorAll("button")].find(button => button.textContent === "Look up")!.click();
       expect(mode).toBe("fixed");
       expect(lookUp).toHaveBeenCalledOnce();
+      expect(panel.element.querySelector<HTMLInputElement>('input[aria-label="One position"]')!.checked).toBe(true);
+      // The layer moves' actions are marks with their full names; how to move one is behind Group's ?.
+      expect([...panel.element.querySelectorAll(".foss-earth-scene-layer-actions button")].map(node => [(node as HTMLElement).dataset.icon, node.getAttribute("aria-label")])).toEqual([
+        ["download", "Download layer moves"], ["copy", "Copy layer moves as JSON"], ["reset", "Reset layers: every photograph back in its published layer"]]);
+      expect(panel.element.querySelector(".foss-earth-scene-layer-actions .foss-earth-choices__note")?.hasAttribute("hidden")).toBe(true);
       const live = [...panel.element.querySelectorAll(".foss-earth-scene-layer-members")];
       live[0].querySelector<HTMLElement>(".foss-earth-scene-card")!.dispatchEvent(new host.dom.window.Event("dragstart", { bubbles: true }));
       live[1].dispatchEvent(new host.dom.window.Event("drop", { bubbles: true }));
@@ -155,6 +168,35 @@ describe("injected Scenes presentation", () => {
       expect(enter).toHaveBeenCalledWith("garden");
       expect(panel.element.querySelectorAll("iframe")).toHaveLength(0);
       expect(panel.element.querySelectorAll(".is-expanded")).toHaveLength(1);
+    } finally { panel.destroy(); host.dom.window.close(); }
+  });
+  it("titles the scene first, with terse state, marks for its actions and the reasons behind ?, kept open through updates", () => {
+    const host = setup();
+    const panel = createScenesPanel({ document: host.document, controller: host.controller, ui: host.ui });
+    const entry = (id: string, preview: SceneEntryStatus["preview"]): SceneEntryStatus => ({ id, title: id, description: null, supported: true, message: null, placement: "placed", preview, marker: null, capture: null, pose: null, attribution: null, previewDetail: null, images: [], links: [] });
+    const status = (ready: number): SceneStatus => ({
+      phase: "overview", active: null, target: null, sceneId: "tour", revision: "r1", title: "Host tour", generation: 1, hovered: null,
+      entries: [entry("a", ready > 0 ? "ready" : "loading"), entry("b", ready > 1 ? "ready" : "loading")], groups: [], layers: [],
+      credits: [], overview: "pending", warnings: [], renderingAvailable: true, unavailableReason: null, lastError: null, view: null,
+    });
+    try {
+      host.document.querySelector("main")!.append(panel.element);
+      host.set({ loading: null, errors: [], status: status(0) });
+      // "Host tour [⌖] [×] [?]", then the state lines.
+      const head = [...panel.element.querySelectorAll<HTMLElement>(".foss-earth-choices")].find(row => row.firstElementChild?.textContent === "Host tour")!;
+      const [go, unload, help] = [...head.querySelectorAll("button")];
+      expect([go.dataset.icon, go.getAttribute("aria-label"), unload.dataset.icon, unload.getAttribute("aria-label"), help.getAttribute("aria-label")]).toEqual(["target", "Go to the scene", "close", "Unload the scene", "Explain the scene's state"]);
+      const shown = () => [...head.querySelectorAll<HTMLElement>(":scope > p:not([hidden])")].map(line => line.textContent);
+      expect(shown()).toEqual(["Overview · 2 entities · revision r1", "0 of 2 previews ready", "Waiting for the ground at the scene's place"]);
+      help.click();
+      expect(help.getAttribute("aria-expanded")).toBe("true");
+      host.set({ loading: null, errors: [], status: { ...status(1), overview: "applied" } });
+      expect(help.isConnected).toBe(true);
+      expect(help.getAttribute("aria-expanded")).toBe("true");
+      expect(go.getAttribute("aria-label")).toBe("Back to the scene's view");
+      expect(shown()).toEqual(["Overview · 2 entities · revision r1", "1 of 2 previews ready"]);
+      unload.click();
+      expect(host.controller.unload).toHaveBeenCalledOnce();
     } finally { panel.destroy(); host.dom.window.close(); }
   });
   it("shows each photograph once and can group the same cards by tour stop", () => {
@@ -174,12 +216,13 @@ describe("injected Scenes presentation", () => {
       credits: [], overview: "none", warnings: [], renderingAvailable: true, unavailableReason: null, lastError: null, view: null,
     };
     try {
+      host.document.querySelector("main")!.append(panel.element);
       host.set({ loading: null, errors: [], status });
       expect(panel.element.textContent).not.toContain("1. Welcome");
       expect(panel.element.textContent).not.toContain("The Twin Cities");
       expect(panel.element.querySelectorAll(".foss-earth-scene-card[data-sphere='garden']")).toHaveLength(1);
       expect(panel.element.querySelector(".is-expanded")).toBeNull();
-      [...panel.element.querySelectorAll("button")].find(button => button.textContent === "Tour stops")!.click();
+      panel.element.querySelector<HTMLInputElement>('input[aria-label="Tour stops"]')!.click();
       const stops = [...panel.element.querySelectorAll(".foss-earth-scene-stop")];
       expect(stops.map(stop => stop.querySelector(".foss-earth-choices__heading")?.textContent)).toEqual([
         "1. Welcome to the UMN Twin Cities (feat. Northrop Mall)",
@@ -189,7 +232,7 @@ describe("injected Scenes presentation", () => {
       expect(panel.element.querySelectorAll(".foss-earth-scene-card[data-sphere='garden']")).toHaveLength(1);
       expect(panel.element.querySelectorAll(".foss-earth-scene-layer-members:not(.foss-earth-scene-stop)")).toHaveLength(0);
       const maximize = stops[0].querySelector<HTMLButtonElement>(".foss-earth-scene-group-toggle")!;
-      expect(maximize?.textContent).toBe("Maximize all");
+      expect([maximize.dataset.icon, maximize.getAttribute("aria-label")]).toEqual(["expand-all", "Maximize all in 1. Welcome to the UMN Twin Cities (feat. Northrop Mall)"]);
       maximize.click();
       const style = host.document.createElement("style");
       style.textContent = readFileSync(new URL("../styles/panel.css", import.meta.url), "utf8");
@@ -208,7 +251,7 @@ describe("injected Scenes presentation", () => {
       expect(panel.element.querySelector("iframe")?.closest<HTMLElement>(".foss-earth-scene-card")?.dataset.sphere).toBe("courtyard");
       assertStill("garden");
       const minimize = panel.element.querySelector<HTMLButtonElement>(".foss-earth-scene-stop .foss-earth-scene-group-toggle")!;
-      expect(minimize.textContent).toBe("Minimize all");
+      expect(minimize.dataset.icon).toBe("collapse-all");
       minimize.click();
       expect(panel.element.querySelectorAll(".foss-earth-scene-card.is-expanded")).toHaveLength(0);
 
