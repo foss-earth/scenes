@@ -67,8 +67,8 @@ describe("mini navigation shared with the full viewer", () => {
     model.wheel(-100);
     expect(model.get().verticalFovDeg).toBeCloseTo(2 * Math.atan(Math.exp(-nav.zoomPerNotch)) * 180 / Math.PI);
   });
-  it("uses the live drag choice so Scroll responds equally from the top, center and bottom", () => {
-    const nav: MiniNavigation = { ...DEFAULT_MINI_NAVIGATION, dragMode: "scroll", inertiaHalfLifeMs: 0 };
+  it("defaults to Scroll at the top, center and bottom and honors an explicit Grab choice", () => {
+    const nav: MiniNavigation = { ...DEFAULT_MINI_NAVIGATION, inertiaHalfLifeMs: 0 };
     const initial = { headingDeg: 100, pitchDeg: 40, verticalFovDeg: 100 };
     const viewport = { width: 390, height: 844 };
     const cameras = [10, 422, 834].map(y => {

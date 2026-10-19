@@ -25,7 +25,7 @@ export interface MiniNavigation {
 }
 
 export const DEFAULT_MINI_NAVIGATION: MiniNavigation = {
-  dragMode: "grab",
+  dragMode: "scroll",
   inertiaHalfLifeMs: 100,
   reducedMotion: false,
   dragSensitivity: 0.15,
