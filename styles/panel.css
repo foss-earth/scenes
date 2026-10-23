@@ -189,7 +189,10 @@
   to { transform: rotate(360deg); }
 }
 
-/* Link buttons sit where their direction is in the sphere. */
+/*
+ * Link buttons sit where their direction is in the sphere. Every gesture passes
+ * through them to the image under them; createSceneHotspots reads a tap from it.
+ */
 .foss-earth-scene-hotspots {
   position: absolute;
   inset: 0;
@@ -201,7 +204,7 @@
   position: absolute;
   top: 0;
   left: 0;
-  pointer-events: auto;
+  pointer-events: none;
   max-width: 14em;
   padding: 6px 12px;
   border: 1px solid rgba(255, 255, 255, 0.7);

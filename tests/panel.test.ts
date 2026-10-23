@@ -47,11 +47,47 @@ describe("injected Scenes presentation", () => {
     } finally { panel.destroy(); for (const contribution of contributions) expect(contribution.destroy).toHaveBeenCalledTimes(1); host.dom.window.close(); }
   });
   it("anchors links on supplied frames and releases overlay subscriptions", () => {
-    const host = setup(), container = host.document.querySelector<HTMLElement>("main")!, overlay = createSceneHotspots({ document: host.document, controller: host.controller, container });
+    const host = setup(), container = host.document.querySelector<HTMLElement>("main")!, surface = host.document.createElement("canvas");
+    const overlay = createSceneHotspots({ document: host.document, controller: host.controller, container, surface, dragThresholdPx: () => 5 });
     try {
       host.activate(host.frameHandle); expect(host.frames.size).toBe(1); for (const frame of host.frames) frame(); const button = container.querySelector<HTMLButtonElement>(".foss-earth-scene-hotspot")!; expect(button.textContent).toBe("Authored link"); expect(button.style.transform).toContain("12px, 24px"); button.click(); expect(host.frameHandle.follow).toHaveBeenCalledWith("link");
       host.activate(null); expect(host.frames.size).toBe(0); expect(container.querySelector("button")).toBeNull();
     } finally { overlay.destroy(); overlay.destroy(); expect(host.listeners.size).toBe(0); expect(container.childElementCount).toBe(0); host.dom.window.close(); }
+  });
+  it("passes every gesture on a link through to the image and takes only a tap", () => {
+    const host = setup(), container = host.document.querySelector<HTMLElement>("main")!, surface = host.document.createElement("canvas"); container.append(surface);
+    const overlay = createSceneHotspots({ document: host.document, controller: host.controller, container, surface, dragThresholdPx: () => 5 });
+    const box = (left: number, top: number, width: number, height: number) => () => ({ left, top, right: left + width, bottom: top + height, width, height, x: left, y: top, toJSON() {} }) as DOMRect;
+    const pointer = (type: string, id: number, x: number, y: number, extra: { pointerType?: string; button?: number; buttons?: number } = {}): Event => {
+      const event = new host.dom.window.Event(type, { bubbles: true, cancelable: true });
+      Object.assign(event, { pointerId: id, clientX: x, clientY: y, pointerType: "touch", button: 0, buttons: type === "pointermove" ? 1 : 0, ...extra }); surface.dispatchEvent(event); return event;
+    };
+    try {
+      host.activate(host.frameHandle); for (const frame of host.frames) frame();
+      const layer = container.querySelector<HTMLElement>(".foss-earth-scene-hotspots")!, button = layer.querySelector<HTMLButtonElement>(".foss-earth-scene-hotspot")!;
+      layer.getBoundingClientRect = box(0, 0, 400, 300); button.getBoundingClientRect = box(0, 14, 24, 20);
+      const follow = vi.mocked(host.frameHandle.follow);
+      // A pinch whose fingers land on the link, a drag across it and a press beside it all stay with the image.
+      pointer("pointerdown", 1, 10, 20); pointer("pointerdown", 2, 14, 26); pointer("pointermove", 1, 4, 18); pointer("pointerup", 1, 4, 18); pointer("pointerup", 2, 14, 26);
+      pointer("pointerdown", 3, 10, 20); pointer("pointermove", 3, 18, 20); pointer("pointerup", 3, 12, 20);
+      pointer("pointerdown", 4, 100, 100); pointer("pointerup", 4, 100, 100);
+      pointer("pointerdown", 5, 10, 20, { pointerType: "mouse", button: 2 }); pointer("pointerup", 5, 10, 20, { pointerType: "mouse", button: 2 });
+      pointer("pointerdown", 6, 10, 20); pointer("pointercancel", 6, 10, 20); pointer("pointerup", 6, 10, 20);
+      expect(follow).not.toHaveBeenCalled();
+      // Nothing the image's own input needs is cancelled.
+      expect(pointer("pointerdown", 7, 10, 20).defaultPrevented).toBe(false); expect(pointer("pointermove", 7, 12, 21).defaultPrevented).toBe(false); expect(pointer("pointerup", 7, 12, 21).defaultPrevented).toBe(false);
+      expect(follow).toHaveBeenCalledTimes(1); expect(follow).toHaveBeenCalledWith("link");
+      // A mouse over a link shows the pointer, and leaving gives the surface its cursor back.
+      surface.style.cursor = "";
+      pointer("pointermove", 8, 10, 20, { pointerType: "mouse", buttons: 0 }); expect(surface.style.cursor).toBe("pointer");
+      pointer("pointermove", 8, 100, 100, { pointerType: "mouse", buttons: 0 }); expect(surface.style.cursor).toBe("");
+      pointer("pointermove", 8, 10, 20, { pointerType: "mouse", buttons: 0 }); pointer("pointerleave", 8, 10, 20, { pointerType: "mouse", buttons: 0 }); expect(surface.style.cursor).toBe("");
+      overlay.destroy(); pointer("pointerdown", 9, 10, 20); pointer("pointerup", 9, 10, 20); expect(follow).toHaveBeenCalledTimes(1);
+    } finally { overlay.destroy(); host.dom.window.close(); }
+  });
+  it("styles links so that no gesture stops on them", () => {
+    const css = readFileSync(new URL("../styles/panel.css", import.meta.url), "utf8"), rule = /\.foss-earth-scene-hotspot \{([^}]*)\}/.exec(css)?.[1] ?? "";
+    expect(rule).toContain("pointer-events: none");
   });
   it("lists each photograph under its layer and moves it when dropped on the other layer", () => {
     const host = setup();

@@ -653,15 +653,61 @@ export function createScenesPanel(options: { document: Document; controller: Sce
   return { element: sections.element, setShown, destroy() { if (destroyed) return; destroyed = true; for (const off of pressBindings) off(); pressBindings = []; flushPanel(); clearPreviews(); headHelp.destroy(); coverObserver?.disconnect(); if (indicatorTimer !== undefined) view?.clearTimeout(indicatorTimer); previewBackend.destroy(); savedPanel.dispose(); view?.removeEventListener("pagehide", flushPanel); document.removeEventListener("visibilitychange", onHidden); off(); offArrangement?.(); offOpening?.(); contentSection.destroy(); creditSection.destroy(); for (const contribution of contributions) contribution.destroy(); sections.destroy(); } };
 }
 
-/** Link buttons at authored image directions; updates only on the supplied drawn-frame event. */
-export function createSceneHotspots(options: { document: Document; controller: SceneController; container: HTMLElement }): { destroy(): void } {
-  const { document, controller, container } = options, layer = document.createElement("div"); layer.className = "foss-earth-scene-hotspots"; container.append(layer);
+/**
+ * Link buttons at authored image directions; updates only on the supplied drawn-frame event.
+ * Every gesture passes through them to the surface that draws the image, so a pinch, wheel or
+ * drag that begins on a link moves the image. They take only a tap, found where it lands, and
+ * a mouse's hover; a keyboard or assistive click still reaches the button itself.
+ */
+export function createSceneHotspots(options: {
+  document: Document; controller: SceneController; container: HTMLElement;
+  /** The element that draws the image and takes its gestures. Taps on a link are read from it. */
+  surface: HTMLElement;
+  /** How far a press may move and still be a tap, CSS px: the host's `input.mouse.dragThreshold`. */
+  dragThresholdPx(): number;
+}): { destroy(): void } {
+  const { document, controller, container, surface } = options, layer = document.createElement("div"); layer.className = "foss-earth-scene-hotspots"; container.append(layer);
   const buttons = new Map<string, HTMLButtonElement>(); let offFrame: (() => void) | null = null, handleSeen: unknown = null, destroyed = false;
+  const presses = new Map<number, { x: number; y: number; link: string | null; moved: boolean }>(), originalCursor = surface.style.cursor;
+  let multiTouch = false, hovered: string | null = null;
+  const hover = (id: string | null): void => { if (id === hovered) return; hovered = id; surface.style.cursor = id ? "pointer" : originalCursor; };
   const place = (): void => {
     const spots = controller.handle()?.hotspots() ?? [], rect = layer.getBoundingClientRect(), seen = new Set<string>();
     for (const spot of spots) { seen.add(spot.id); let button = buttons.get(spot.id); if (!button) { button = document.createElement("button"); button.className = "foss-earth-scene-hotspot"; button.type = "button"; const id = spot.id; button.addEventListener("click", () => { void controller.handle()?.follow(id); }); buttons.set(id, button); layer.append(button); } button.textContent = spot.label; button.style.transform = `translate(${spot.x - rect.left}px, ${spot.y - rect.top}px) translate(-50%, -50%)`; }
     for (const [id, button] of buttons) if (!seen.has(id)) { button.remove(); buttons.delete(id); }
+    if (hovered && !buttons.has(hovered)) hover(null);
   };
+  /** The link drawn on top at a client point, inside the layer's clip; later buttons draw over earlier ones. */
+  const linkAt = (x: number, y: number): string | null => {
+    if (!buttons.size) return null;
+    const inside = (r: DOMRect): boolean => x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+    if (!inside(layer.getBoundingClientRect())) return null;
+    let found: string | null = null;
+    for (const [id, button] of buttons) if (inside(button.getBoundingClientRect())) found = id;
+    return found;
+  };
+  const onPointerDown = (event: PointerEvent): void => {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    presses.set(event.pointerId, { x: event.clientX, y: event.clientY, link: linkAt(event.clientX, event.clientY), moved: false }); if (presses.size > 1) multiTouch = true;
+  };
+  const onPointerMove = (event: PointerEvent): void => {
+    const press = presses.get(event.pointerId);
+    if (press && !(Math.hypot(event.clientX - press.x, event.clientY - press.y) < options.dragThresholdPx())) press.moved = true;
+    if (event.pointerType !== "touch" && event.buttons === 0) hover(linkAt(event.clientX, event.clientY));
+  };
+  // A tap begins and ends on the same link, with one contact, without moving past the threshold.
+  const onPointerUp = (event: PointerEvent): void => {
+    const press = presses.get(event.pointerId); presses.delete(event.pointerId); const wasMulti = multiTouch; if (!presses.size) multiTouch = false;
+    if (!press?.link || press.moved || wasMulti || linkAt(event.clientX, event.clientY) !== press.link) return;
+    void controller.handle()?.follow(press.link);
+  };
+  const onPointerCancel = (event: PointerEvent): void => { presses.delete(event.pointerId); if (!presses.size) multiTouch = false; };
+  const onPointerLeave = (event: PointerEvent): void => { if (event.pointerType !== "touch") hover(null); };
+  surface.addEventListener("pointerdown", onPointerDown); surface.addEventListener("pointermove", onPointerMove); surface.addEventListener("pointerup", onPointerUp); surface.addEventListener("pointercancel", onPointerCancel); surface.addEventListener("pointerleave", onPointerLeave);
   const off = controller.subscribe(() => { const handle = controller.handle(); if (handle !== handleSeen) { offFrame?.(); offFrame = handle?.onFrame(place) ?? null; handleSeen = handle; } place(); });
-  return { destroy() { if (destroyed) return; destroyed = true; off(); offFrame?.(); layer.remove(); buttons.clear(); } };
+  return { destroy() {
+    if (destroyed) return; destroyed = true; off(); offFrame?.();
+    surface.removeEventListener("pointerdown", onPointerDown); surface.removeEventListener("pointermove", onPointerMove); surface.removeEventListener("pointerup", onPointerUp); surface.removeEventListener("pointercancel", onPointerCancel); surface.removeEventListener("pointerleave", onPointerLeave);
+    hover(null); presses.clear(); layer.remove(); buttons.clear();
+  } };
 }
