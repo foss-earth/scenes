@@ -94,6 +94,32 @@ The app controller loads explicit URLs or registered example IDs, cancels old lo
 
 `connectSceneLog(controller, log)` binds scene-specific formatting to the public UI `GameLog` ports and structural `SceneLogController` subscriptions. The UI import is type-only, and nothing (log, DOM, timer or polling) starts on import. It shows manifest bytes, aggregated usable-preview progress, unavailable and failure diagnostics, cancelled bars, and completed images with `keepInHistory: false`. UI owns log expiry, history and timers. Detach marks the connection stale, attempts every subscription and unfinished-line release even if one fails, and can be called repeatedly. Held callbacks cannot republish. A registration failure rolls back the earlier subscriptions.
 
+## Adding prepared images
+
+`addPreparedPanorama(scene, fragment, options)` from `./authoring` immutably adds
+an `asset.fragment.json` produced by `@foss-earth/sphere-image/preparation`.
+Options include an entity ID/title, capture latitude/longitude, `mediaBaseUrl`,
+optional `sceneBaseUrl` to preserve existing image addresses, and optional
+`groupId`/`initial`. It preserves credits, orientation and existing content,
+rejects duplicate IDs and keeps unknown height null. This is assembly only;
+the host validates the result with its representation catalogue before use.
+The Earth app exposes this through **+ → Add image → Prepared panorama**.
+
+The Node CLI performs that validation and refuses to overwrite an output file:
+
+```sh
+foss-earth-add-image --scene existing.scene.json \
+  --scene-base-url https://example.org/tour/scene.json \
+  --fragment public/media/my-photo/asset.fragment.json \
+  --id my-photo --title "My photo" --lat 44.97 --lon -93.23 \
+  --media-base-url https://example.org/tour/ --out updated.scene.json
+```
+
+Omit `--scene` to create a scene (`--scene-id` and `--scene-title` are optional).
+Publish the prepared files separately at their declared URLs. The CLI and helper
+do not download imagery, guess capture heights, add links or modify an existing
+source file. For generated tours, add the fragment to the tour's authoring inputs.
+
 ## Preview sheets
 
 `buildScenePreviewSheets(manifestPath, {faceSize?, quality?, maxPixels?})` from `./preview-sheets`, and the `foss-earth-build-preview-sheets` command, build preview sheets for a scene's cube images. The command takes inline or separate arguments, and leaves the host scene revision unchanged. It uses the public preview packer and cube file enumerator, and defines no schema or pixel algorithm of its own.

@@ -9,6 +9,12 @@
     "./styles/panel.css"
   ],
   "exports": {
+    "./authoring": {
+      "source": "./src/authoring.ts",
+      "types": "./dist/authoring.d.ts",
+      "import": "./dist/authoring.js"
+    },
+    "./import-image-cli": "./node/import-image-cli.mjs",
     ".": {
       "source": "./src/index.ts",
       "types": "./dist/index.d.ts",
@@ -99,6 +105,7 @@
     "url": "https://github.com/foss-earth/scenes.git"
   },
   "bin": {
+    "foss-earth-add-image": "./node/import-image-cli.mjs",
     "foss-earth-check-scene": "./node/check-cli.mjs",
     "foss-earth-build-preview-sheets": "./node/build-preview-cli.mjs"
   }
